@@ -1,0 +1,580 @@
+---
+title: MCP Server Integration
+description: Extend Gemini CLI with Model Context Protocol (MCP) servers
+icon: plug
+---
+
+Model Context Protocol (MCP) servers enable you to extend the Gemini CLI with custom tools, resources, and data sources. MCP servers act as a bridge between the Gemini model and external systems.
+
+## What is an MCP Server?
+
+An MCP server is an application that exposes capabilities to the Gemini CLI through the Model Context Protocol. It enables the CLI to:
+
+<CardGroup cols={3}>
+  <Card title="Discover Tools" icon="wrench">
+    List available tools with descriptions and parameters through standardized schemas
+  </Card>
+  <Card title="Execute Tools" icon="play">
+    Call specific tools with arguments and receive structured responses
+  </Card>
+  <Card title="Access Resources" icon="database">
+    Read data from exposed resources (files, API payloads, reports)
+  </Card>
+</CardGroup>
+
+With MCP servers, you can perform actions beyond built-in features like:
+- Interacting with databases
+- Calling external APIs
+- Running custom scripts
+- Implementing specialized workflows
+
+## Architecture
+
+The Gemini CLI integrates with MCP servers through a sophisticated discovery and execution system.
+
+### Discovery Layer
+
+The discovery process:
+
+1. **Iterates through configured servers** from `settings.json`
+2. **Establishes connections** using appropriate transport mechanisms
+3. **Fetches tool definitions** from each server
+4. **Sanitizes and validates** tool schemas for Gemini API compatibility
+5. **Registers tools** with conflict resolution
+6. **Fetches and registers resources** if exposed
+
+### Execution Layer
+
+Each discovered MCP tool:
+
+- **Handles confirmation logic** based on trust settings
+- **Manages tool execution** with proper parameters
+- **Processes responses** for both LLM context and user display
+- **Maintains connection state** and handles timeouts
+
+### Transport Mechanisms
+
+<Tabs>
+  <Tab title="Stdio">
+    Spawns a subprocess and communicates via stdin/stdout. Best for local servers.
+    
+    ```json
+    {
+      "command": "node",
+      "args": ["server.js"]
+    }
+    ```
+  </Tab>
+  
+  <Tab title="SSE">
+    Connects to Server-Sent Events endpoints. Best for remote servers.
+    
+    ```json
+    {
+      "url": "https://api.example.com/sse"
+    }
+    ```
+  </Tab>
+  
+  <Tab title="HTTP">
+    Uses HTTP streaming for communication. Best for HTTP-based services.
+    
+    ```json
+    {
+      "httpUrl": "https://api.example.com/mcp"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+Configure MCP servers in your `settings.json` file using the `mcpServers` object.
+
+### Basic Structure
+
+```json
+{
+  "mcpServers": {
+    "serverName": {
+      "command": "path/to/server",
+      "args": ["--arg1", "value1"],
+      "env": {
+        "API_KEY": "$MY_API_TOKEN"
+      },
+      "cwd": "./server-directory",
+      "timeout": 30000,
+      "trust": false
+    }
+  }
+}
+```
+
+### Configuration Properties
+
+#### Required (one of the following)
+
+<ParamField path="command" type="string">
+  Path to the executable for Stdio transport
+</ParamField>
+
+<ParamField path="url" type="string">
+  SSE endpoint URL (e.g., `"http://localhost:8080/sse"`)
+</ParamField>
+
+<ParamField path="httpUrl" type="string">
+  HTTP streaming endpoint URL
+</ParamField>
+
+#### Optional
+
+<ParamField path="args" type="string[]">
+  Command-line arguments for Stdio transport
+</ParamField>
+
+<ParamField path="headers" type="object">
+  Custom HTTP headers for `url` or `httpUrl` transports
+</ParamField>
+
+<ParamField path="env" type="object">
+  Environment variables for the server process. Supports `$VAR_NAME` or `${VAR_NAME}` syntax (all platforms), or `%VAR_NAME%` (Windows only)
+</ParamField>
+
+<ParamField path="cwd" type="string">
+  Working directory for Stdio transport
+</ParamField>
+
+<ParamField path="timeout" type="number" default="600000">
+  Request timeout in milliseconds (default: 10 minutes)
+</ParamField>
+
+<ParamField path="trust" type="boolean" default="false">
+  When `true`, bypasses all tool call confirmations for this server
+</ParamField>
+
+<ParamField path="includeTools" type="string[]">
+  Allowlist of tool names to include from this server
+</ParamField>
+
+<ParamField path="excludeTools" type="string[]">
+  Blocklist of tool names to exclude from this server (takes precedence over `includeTools`)
+</ParamField>
+
+### Environment Variable Expansion
+
+Securely reference environment variables without hardcoding sensitive information:
+
+```json
+{
+  "env": {
+    "API_KEY": "$MY_EXTERNAL_TOKEN",
+    "LOG_LEVEL": "${LOG_LEVEL}",
+    "TEMP_DIR": "%TEMP%"
+  }
+}
+```
+
+Supported syntaxes:
+- **POSIX/Bash:** `$VARIABLE_NAME` or `${VARIABLE_NAME}` (all platforms)
+- **Windows:** `%VARIABLE_NAME%` (Windows only)
+
+Undefined variables resolve to empty strings.
+
+## Example Configurations
+
+### Python MCP Server (Stdio)
+
+```json
+{
+  "mcpServers": {
+    "pythonTools": {
+      "command": "python",
+      "args": ["-m", "my_mcp_server", "--port", "8080"],
+      "cwd": "./mcp-servers/python",
+      "env": {
+        "DATABASE_URL": "$DB_CONNECTION_STRING",
+        "API_KEY": "${EXTERNAL_API_KEY}"
+      },
+      "timeout": 15000
+    }
+  }
+}
+```
+
+### Node.js MCP Server (Stdio)
+
+```json
+{
+  "mcpServers": {
+    "nodeServer": {
+      "command": "node",
+      "args": ["dist/server.js", "--verbose"],
+      "cwd": "./mcp-servers/node",
+      "trust": true
+    }
+  }
+}
+```
+
+### Docker-based MCP Server
+
+```json
+{
+  "mcpServers": {
+    "dockerizedServer": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "API_KEY",
+        "-v",
+        "${PWD}:/workspace",
+        "my-mcp-server:latest"
+      ],
+      "env": {
+        "API_KEY": "$EXTERNAL_SERVICE_TOKEN"
+      }
+    }
+  }
+}
+```
+
+### HTTP MCP Server with Headers
+
+```json
+{
+  "mcpServers": {
+    "httpServerWithAuth": {
+      "httpUrl": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer your-api-token",
+        "X-Custom-Header": "custom-value"
+      },
+      "timeout": 5000
+    }
+  }
+}
+```
+
+### Server with Tool Filtering
+
+```json
+{
+  "mcpServers": {
+    "filteredServer": {
+      "command": "python",
+      "args": ["-m", "my_mcp_server"],
+      "includeTools": ["safe_tool", "file_reader", "data_processor"],
+      "excludeTools": ["dangerous_tool", "file_deleter"],
+      "timeout": 30000
+    }
+  }
+}
+```
+
+## OAuth Authentication
+
+The Gemini CLI supports OAuth 2.0 authentication for remote MCP servers.
+
+### Automatic OAuth Discovery
+
+```json
+{
+  "mcpServers": {
+    "discoveredServer": {
+      "url": "https://api.example.com/sse"
+    }
+  }
+}
+```
+
+The CLI automatically:
+- Detects when OAuth is required (401 responses)
+- Discovers OAuth endpoints from server metadata
+- Performs dynamic client registration if supported
+- Handles the OAuth flow and token management
+
+### Authentication Flow
+
+<Steps>
+  <Step title="Initial Connection">
+    Connection attempt fails with 401 Unauthorized
+  </Step>
+  
+  <Step title="OAuth Discovery">
+    Finds authorization and token endpoints
+  </Step>
+  
+  <Step title="Browser Authentication">
+    Opens browser for user authentication
+  </Step>
+  
+  <Step title="Token Exchange">
+    Exchanges authorization code for access tokens
+  </Step>
+  
+  <Step title="Token Storage">
+    Stores tokens securely for future use
+  </Step>
+  
+  <Step title="Connection Retry">
+    Retries connection with valid tokens
+  </Step>
+</Steps>
+
+<Warning>
+OAuth authentication requires:
+- Local browser access
+- Ability to receive redirects on `http://localhost:7777/oauth/callback`
+
+This won't work in headless environments or remote SSH sessions without X11 forwarding.
+</Warning>
+
+### Managing OAuth
+
+Use the `/mcp auth` command:
+
+```bash
+# List servers requiring authentication
+/mcp auth
+
+# Authenticate with a specific server
+/mcp auth serverName
+
+# Re-authenticate if tokens expire
+/mcp auth serverName
+```
+
+## MCP Resources
+
+Some MCP servers expose contextual resources that can be referenced in conversations.
+
+### Referencing Resources
+
+Use the `@` syntax to reference resources:
+
+```
+@server://resource/path
+```
+
+Resource URIs appear in the completion menu alongside filesystem paths. When you submit, the CLI calls `resources/read` and injects the content.
+
+### Viewing Resources
+
+The `/mcp` command displays available resources:
+
+```bash
+/mcp
+```
+
+Shows a Resources section for each connected server.
+
+## MCP Prompts as Slash Commands
+
+MCP servers can expose predefined prompts as slash commands.
+
+### Example Server
+
+```typescript
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { z } from 'zod';
+
+const server = new McpServer({
+  name: 'prompt-server',
+  version: '1.0.0',
+});
+
+server.registerPrompt(
+  'poem-writer',
+  {
+    title: 'Poem Writer',
+    description: 'Write a nice haiku',
+    argsSchema: { title: z.string(), mood: z.string().optional() },
+  },
+  ({ title, mood }) => ({
+    messages: [
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `Write a haiku${mood ? ` with the mood ${mood}` : ''} called ${title}`,
+        },
+      },
+    ],
+  }),
+);
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+### Invoking Prompts
+
+```bash
+# Named arguments
+/poem-writer --title="Gemini CLI" --mood="reverent"
+
+# Positional arguments
+/poem-writer "Gemini CLI" reverent
+```
+
+## Managing MCP Servers
+
+Use the `gemini mcp` command group to manage server configurations.
+
+### Add a Server
+
+```bash
+# Stdio server
+gemini mcp add my-server python server.py --arg value
+
+# HTTP server
+gemini mcp add --transport http http-server https://api.example.com/mcp/
+
+# SSE server with auth
+gemini mcp add --transport sse --header "Authorization: Bearer token" sse-server https://api.example.com/sse/
+```
+
+### List Servers
+
+```bash
+gemini mcp list
+```
+
+**Example output:**
+```
+✓ stdio-server: command: python3 server.py (stdio) - Connected
+✓ http-server: https://api.example.com/mcp (http) - Connected
+✗ sse-server: https://api.example.com/sse (sse) - Disconnected
+```
+
+### Remove a Server
+
+```bash
+gemini mcp remove my-server
+```
+
+### Enable/Disable Servers
+
+```bash
+# Disable a server
+gemini mcp disable my-server
+
+# Enable a server
+gemini mcp enable my-server
+
+# Session-only change
+gemini mcp disable my-server --session
+```
+
+## Returning Rich Content
+
+MCP tools can return multi-part content including text, images, and audio.
+
+### Example Response
+
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Here is the logo you requested."
+    },
+    {
+      "type": "image",
+      "data": "BASE64_ENCODED_IMAGE_DATA_HERE",
+      "mimeType": "image/png"
+    },
+    {
+      "type": "text",
+      "text": "The logo was created in 2025."
+    }
+  ]
+}
+```
+
+Supported content types:
+- `text`
+- `image`
+- `audio`
+- `resource` (embedded content)
+- `resource_link`
+
+## Security
+
+### Environment Sanitization
+
+<Warning>
+By default, the CLI redacts sensitive environment variables to prevent unintended exposure:
+- Core project keys: `GEMINI_API_KEY`, `GOOGLE_API_KEY`
+- Patterns: `*TOKEN*`, `*SECRET*`, `*PASSWORD*`, `*KEY*`, `*AUTH*`, `*CREDENTIAL*`
+- Certificates and private key patterns
+</Warning>
+
+**Explicit Overrides:**
+
+To pass an environment variable to an MCP server, explicitly define it in the `env` property:
+
+```json
+{
+  "env": {
+    "MY_KEY": "$MY_KEY"
+  }
+}
+```
+
+<Tip>
+Use environment variable expansion instead of hardcoding secrets.
+</Tip>
+
+### Trust Settings
+
+<Warning>
+The `trust` option bypasses all confirmation dialogs. Use cautiously and only for servers you completely control.
+</Warning>
+
+## Troubleshooting
+
+### Server Won't Connect
+
+1. Verify `command`, `args`, and `cwd` are correct
+2. Test the server command manually
+3. Check that all dependencies are installed
+4. Review CLI output for error messages
+5. Verify execution permissions
+
+### No Tools Discovered
+
+1. Ensure your server registers tools correctly
+2. Verify MCP protocol implementation
+3. Review server logs (stderr output)
+4. Manually test tool discovery endpoint
+
+### Tools Not Executing
+
+1. Validate parameter schemas
+2. Verify input schemas are valid JSON Schema
+3. Check for unhandled exceptions
+4. Consider increasing the `timeout` setting
+
+### Debug Mode
+
+Run with `--debug` flag or press F12 in interactive mode:
+
+```bash
+gemini --debug
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Build an Extension" icon="puzzle-piece" href="/extensions/writing-extensions">
+    Create an extension with an MCP server
+  </Card>
+  <Card title="MCP Specification" icon="book" href="https://modelcontextprotocol.io">
+    Learn about the Model Context Protocol
+  </Card>
+</CardGroup>

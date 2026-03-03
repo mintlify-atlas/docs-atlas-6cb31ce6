@@ -1,0 +1,227 @@
+---
+title: How Gemini CLI Works
+description: Learn about the architecture and core components that power Gemini CLI
+---
+
+Gemini CLI is an AI agent that brings Google's Gemini models directly into your terminal. Understanding how it works will help you use it more effectively and customize it to your needs.
+
+## Architecture Overview
+
+Gemini CLI is built with two primary packages that work together:
+
+<CardGroup cols={2}>
+  <Card title="CLI Package" icon="terminal">
+    Provides the user interface, handles user input, and manages the interactive terminal session
+  </Card>
+  <Card title="Core Package" icon="microchip">
+    Manages API communication, tool orchestration, and conversation state
+  </Card>
+</CardGroup>
+
+## How a Request Flows Through the System
+
+When you send a prompt to Gemini CLI, it goes through several stages:
+
+<Steps>
+  <Step title="User Input">
+    You enter a request in the terminal. This can include natural language prompts, special syntax like `@file.txt` for file references, or `!command` for shell commands.
+  </Step>
+  
+  <Step title="Context Assembly">
+    The core package constructs the full prompt by combining:
+    - Your user input
+    - Conversation history
+    - Tool definitions
+    - Context from `GEMINI.md` files
+    - System instructions
+  </Step>
+  
+  <Step title="API Communication">
+    The constructed prompt is sent to the Gemini API with the selected model and generation settings.
+  </Step>
+  
+  <Step title="Tool Request Analysis">
+    The model analyzes your request and determines if tools are needed to fulfill it. If so, it requests specific tools with parameters.
+  </Step>
+  
+  <Step title="Tool Validation & Confirmation">
+    The CLI validates tool parameters and checks security policies. For sensitive operations (file writes, shell commands), you're prompted for approval.
+  </Step>
+  
+  <Step title="Tool Execution">
+    Approved tools execute and return results. These results are sent back to the model for further processing.
+  </Step>
+  
+  <Step title="Response Generation">
+    The model uses tool results to generate a final, grounded answer that's displayed in your terminal.
+  </Step>
+</Steps>
+
+## Core Components
+
+### Prompt Engineering
+
+The core package constructs effective prompts for the Gemini model by:
+
+- Incorporating conversation history for context continuity
+- Including tool definitions so the model knows what actions it can perform
+- Adding instructional context from hierarchical `GEMINI.md` files
+- Applying system-level instructions that guide the model's behavior
+
+### Tool Management & Orchestration
+
+The tool system is the bridge between the AI model and your local environment:
+
+1. **Tool Registration**: Available tools (file operations, shell commands, web access) are registered with the core
+2. **Request Interpretation**: When the model requests a tool, the core interprets the request and validates parameters
+3. **Execution**: The core executes the tool with security safeguards
+4. **Result Handling**: Tool outputs are formatted and returned to the model
+
+See the [Tools](/concepts/tools) documentation for detailed information about available tools.
+
+### Session and State Management
+
+The core maintains conversation state including:
+
+- **Conversation history**: Previous messages and responses
+- **Tool execution results**: Outcomes of previous tool calls
+- **Context files**: Loaded `GEMINI.md` content
+- **Session metadata**: Token usage, model selection, and settings
+
+<Note>
+The CLI footer displays the number of loaded context files, giving you a visual indicator of active instructional context.
+</Note>
+
+## Chat History Compression
+
+Long conversations can exceed model token limits. To handle this, Gemini CLI automatically compresses conversation history when approaching limits.
+
+The compression is designed to be lossless in terms of information conveyed while reducing token count. This allows you to maintain extended sessions without losing important context.
+
+<Tip>
+You can check current token usage with the `/stats model` command to see your session's usage and quota information.
+</Tip>
+
+## Model Fallback & Routing
+
+Gemini CLI includes intelligent model routing to ensure uninterrupted service:
+
+### Automatic Fallback
+
+If your selected model encounters issues (rate limiting, quota exhaustion, server errors):
+
+1. The CLI detects the failure
+2. You're prompted to switch to a fallback model (unless configured for silent fallback)
+3. If approved, the CLI uses the fallback model for the current turn or remainder of the session
+
+### Model Selection Precedence
+
+The model used is determined in this order:
+
+1. **`--model` flag**: Specified when launching the CLI
+2. **`GEMINI_MODEL` environment variable**: Set in your shell environment
+3. **`model.name` in settings.json**: Configured in your settings file
+4. **Default model**: `auto` (lets the system choose the best model)
+
+<Info>
+Internal utility calls (like prompt completion) use a silent fallback chain from `gemini-2.5-flash-lite` → `gemini-2.5-flash` → `gemini-2.5-pro` without changing your configured model.
+</Info>
+
+## File Discovery Service
+
+The file discovery service helps the model find relevant files in your project. It's used by:
+
+- The `@` command for including file contents
+- Tools that need to access files
+- Pattern-based file searches with glob patterns
+
+The service respects `.gitignore` and `.geminiignore` patterns to exclude unwanted files.
+
+## Memory Discovery Service
+
+The memory discovery service finds and loads `GEMINI.md` context files in a hierarchical manner:
+
+1. **Global context**: `~/.gemini/GEMINI.md` (applies to all projects)
+2. **Workspace context**: `GEMINI.md` files in configured workspace directories
+3. **Just-in-time context**: When tools access a file or directory, `GEMINI.md` files in that path are automatically loaded
+
+All discovered context files are concatenated and sent to the model with every prompt.
+
+<Tip>
+Use `/memory show` to view the full concatenated context being sent to the model, or `/memory refresh` to reload all context files.
+</Tip>
+
+## Security Considerations
+
+Security is built into the core architecture:
+
+### API Key Management
+
+The core securely handles your `GEMINI_API_KEY` or authentication credentials, ensuring they're never exposed to the model or logged inappropriately.
+
+### Tool Execution Safety
+
+- **User confirmation**: File modifications and shell commands require manual approval
+- **Sandboxing**: Tools can run in containerized environments to isolate changes
+- **Trusted folders**: Configure which directories allow system tool execution
+- **Policy engine**: Fine-grained control over tool execution permissions
+
+<Warning>
+Always review confirmation prompts carefully before approving tool execution, especially for file writes and shell commands.
+</Warning>
+
+## Subagents (Experimental)
+
+Gemini CLI can delegate complex tasks to specialized subagents:
+
+- **Focused context**: Each subagent has its own system prompt and persona
+- **Specialized tools**: Restricted or domain-specific toolsets
+- **Independent context**: Separate conversation loop saves tokens in main session
+
+### Built-in Subagents
+
+<CardGroup cols={2}>
+  <Card title="Codebase Investigator" icon="magnifying-glass">
+    Analyzes codebases, reverse engineers, and understands complex dependencies
+  </Card>
+  <Card title="CLI Help Agent" icon="circle-question">
+    Expert knowledge about Gemini CLI commands, configuration, and documentation
+  </Card>
+  <Card title="Browser Agent" icon="browser">
+    Automates web browser tasks using the accessibility tree (requires Chrome 144+)
+  </Card>
+  <Card title="Generalist Agent" icon="route">
+    Routes tasks to appropriate specialized subagents
+  </Card>
+</CardGroup>
+
+<Note>
+Subagents are experimental. Enable custom subagents with `"experimental": { "enableAgents": true }` in your settings.json.
+</Note>
+
+## Citations
+
+When Gemini finds it's reciting text from a source, it automatically appends citations to the output. Citations are:
+
+- Shown before edit confirmations
+- Displayed at the end of the model's turn
+- Deduplicated and sorted alphabetically
+
+You can disable citations with the `ui.showCitations` setting if needed.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Available Models" href="/concepts/models" icon="microchip">
+    Learn about model selection and when to use Pro, Flash, or Auto modes
+  </Card>
+  <Card title="Tool System" href="/concepts/tools" icon="wrench">
+    Explore the tools available for file operations, shell commands, and more
+  </Card>
+  <Card title="Context Management" href="/concepts/context" icon="file">
+    Master GEMINI.md files for persistent project-specific instructions
+  </Card>
+  <Card title="Configuration" href="/reference/configuration" icon="gear">
+    Customize Gemini CLI settings and behavior
+  </Card>
+</CardGroup>

@@ -1,0 +1,341 @@
+---
+title: Checkpointing
+description: Automatic snapshots before file modifications for safe experimentation
+---
+
+Checkpointing automatically saves a snapshot of your project's state before any AI-powered file modifications. This lets you safely experiment with code changes, knowing you can instantly revert to the state before the tool was executed.
+
+## How It Works
+
+When you approve a tool that modifies the file system (like `write_file` or `replace`), Gemini CLI automatically creates a checkpoint.
+
+<Steps>
+  <Step title="Tool Approval">
+    You approve a file-modifying tool (e.g., `write_file`, `replace`).
+  </Step>
+  <Step title="Automatic Checkpoint">
+    Before execution, the CLI creates a checkpoint containing:
+    - **Git snapshot:** Complete project state in a shadow repository
+    - **Conversation history:** Full chat history up to this point
+    - **Tool call:** The specific tool about to be executed
+  </Step>
+  <Step title="Safe Execution">
+    The tool executes with your files protected by the checkpoint.
+  </Step>
+  <Step title="Restore Anytime">
+    Use `/restore` to revert files, conversation, and re-propose the tool call.
+  </Step>
+</Steps>
+
+## What's Saved in a Checkpoint
+
+<CardGroup cols={3}>
+  <Card title="Git Snapshot" icon="code-branch">
+    Complete state of project files captured in a shadow Git repository at `~/.gemini/history/<project_hash>`.
+    
+    Does **not** interfere with your project's Git repository.
+  </Card>
+  <Card title="Conversation History" icon="comments">
+    Entire conversation with the agent up to the checkpoint moment.
+  </Card>
+  <Card title="Tool Call" icon="wrench">
+    The specific tool call that was about to be executed, stored for re-proposal.
+  </Card>
+</CardGroup>
+
+## Enabling Checkpointing
+
+Checkpointing is **disabled by default** and must be enabled in your `settings.json` file.
+
+<Note>
+The `--checkpointing` command-line flag was removed in version 0.11.0. Use `settings.json` configuration only.
+</Note>
+
+### Configuration
+
+Add to your `settings.json`:
+
+```json
+{
+  "general": {
+    "checkpointing": {
+      "enabled": true
+    }
+  }
+}
+```
+
+<Tabs>
+  <Tab title="User-Level">
+    Edit `~/.gemini/settings.json` to enable for all projects:
+
+    ```json
+    {
+      "general": {
+        "checkpointing": {
+          "enabled": true
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Project-Level">
+    Edit `<project>/.gemini/settings.json` to enable for specific project:
+
+    ```json
+    {
+      "general": {
+        "checkpointing": {
+          "enabled": true
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Using /settings">
+    Use the interactive settings editor:
+
+    ```bash
+    /settings
+    ```
+
+    Navigate to `general.checkpointing.enabled` and set to `true`.
+  </Tab>
+</Tabs>
+
+## Using the `/restore` Command
+
+Once enabled, checkpoints are created automatically. Manage them with `/restore`.
+
+### List Available Checkpoints
+
+Run without arguments to see all checkpoints:
+
+```bash
+/restore
+```
+
+**Example Output:**
+
+```text
+Available checkpoints:
+
+  1. 2025-06-22T10-00-00_000Z-app.js-write_file
+  2. 2025-06-22T09-45-30_000Z-config.json-replace
+  3. 2025-06-22T09-30-15_000Z-README.md-write_file
+```
+
+Checkpoint filenames contain:
+- **Timestamp:** When the checkpoint was created
+- **File name:** The file being modified
+- **Tool name:** The tool that was about to run
+
+### Restore a Specific Checkpoint
+
+Use the checkpoint filename from the list:
+
+```bash
+/restore 2025-06-22T10-00-00_000Z-app.js-write_file
+```
+
+<Steps>
+  <Step title="Files Restored">
+    All project files revert to the captured snapshot state.
+  </Step>
+  <Step title="Conversation Restored">
+    Chat history in the CLI returns to the checkpoint moment.
+  </Step>
+  <Step title="Tool Re-Proposed">
+    The original tool call reappears, allowing you to:
+    - Run it again
+    - Modify it
+    - Simply ignore it
+  </Step>
+</Steps>
+
+## Storage Locations
+
+Checkpoint data is stored locally on your machine.
+
+### Git Snapshots
+
+Shadow repository (does not interfere with your project Git):
+
+```
+~/.gemini/history/<project_hash>/
+```
+
+### Checkpoint Metadata
+
+Conversation history and tool calls:
+
+<Tabs>
+  <Tab title="Linux/macOS">
+    ```
+    ~/.gemini/tmp/<project_hash>/checkpoints/
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```
+    C:\Users\<YourUsername>\.gemini\tmp\<project_hash>\checkpoints\
+    ```
+  </Tab>
+</Tabs>
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Safe Experimentation" icon="flask">
+    Try risky refactors or experimental changes knowing you can instantly revert.
+  </Card>
+  <Card title="Review Before Commit" icon="magnifying-glass">
+    Review AI-generated changes, restore if needed, then commit manually.
+  </Card>
+  <Card title="Compare Approaches" icon="code-compare">
+    Restore to try alternative implementations of the same feature.
+  </Card>
+  <Card title="Undo Mistakes" icon="rotate-left">
+    Quickly recover from unwanted changes without manually reverting files.
+  </Card>
+</CardGroup>
+
+## Checkpointing vs. Session Management
+
+Understand the difference between these two features:
+
+| Feature | Checkpointing | Session Management |
+|---------|--------------|--------------------|
+| **Purpose** | Snapshot before file modifications | Save conversation history |
+| **Trigger** | Before tool execution (automatic) | Continuous (automatic) |
+| **What's Saved** | Files + conversation + tool call | Conversation only |
+| **Command** | `/restore [checkpoint]` | `/resume` or `gemini --resume` |
+| **Storage** | `checkpoints/` + `history/` | `chats/` |
+| **Use Case** | Undo file changes | Resume work later |
+
+<Info>
+Checkpointing focuses on **file safety** while session management focuses on **conversation continuity**.
+</Info>
+
+## Manual Conversation Checkpoints
+
+For manual conversation state saving (without file snapshots), use `/chat` commands:
+
+```bash
+/chat save my-checkpoint    # Save conversation state
+/chat resume my-checkpoint  # Resume conversation state
+/chat list                  # List manual checkpoints
+/chat delete my-checkpoint  # Delete checkpoint
+```
+
+See [Session Management](sessions#manual-checkpoints) for details.
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Enable Per Project" icon="folder">
+    Enable checkpointing in project-level `settings.json` for critical codebases while keeping it off for experimental projects.
+  </Card>
+  <Card title="Review Before Restore" icon="eye">
+    List checkpoints with `/restore` to review the timestamp and file before restoring.
+  </Card>
+  <Card title="Clean Up Old Checkpoints" icon="broom">
+    Periodically remove old checkpoints from `~/.gemini/tmp/<project_hash>/checkpoints/` to manage disk space.
+  </Card>
+  <Card title="Combine with Git" icon="code-branch">
+    Use checkpointing for immediate safety and Git for long-term version control. Checkpoints complement, not replace, Git.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="/restore command not available">
+    **Cause:** Checkpointing is not enabled.
+
+    **Solution:** Add `"general": { "checkpointing": { "enabled": true } }` to your `settings.json`.
+  </Accordion>
+
+  <Accordion title="No checkpoints listed">
+    **Cause:** No file-modifying tools have been executed yet, or checkpoints were manually deleted.
+
+    **Solution:** Approve a tool that modifies files (e.g., `write_file`) to create a checkpoint.
+  </Accordion>
+
+  <Accordion title="Restore didn't revert my files">
+    **Cause:** Incorrect checkpoint selected, or files modified outside Gemini CLI.
+
+    **Solution:** 
+    - Verify the checkpoint filename matches the change you want to undo
+    - Check if files were modified by other tools/editors after the checkpoint
+    - Use Git directly for changes made outside Gemini CLI
+  </Accordion>
+
+  <Accordion title="Shadow Git repository conflicts">
+    **Cause:** Manual modifications to `~/.gemini/history/<project_hash>/`.
+
+    **Solution:** Do not manually edit the shadow repository. If corrupted, delete it and checkpointing will recreate it.
+  </Accordion>
+
+  <Accordion title="Disk space issues">
+    **Cause:** Checkpoints accumulate over time for large projects.
+
+    **Solution:**
+    - Manually delete old checkpoints from `~/.gemini/tmp/<project_hash>/checkpoints/`
+    - Delete the shadow repository at `~/.gemini/history/<project_hash>/` if no longer needed
+    - Consider enabling checkpointing only for specific projects
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Usage
+
+### Checkpoint File Structure
+
+Checkpoint files are JSON with the following structure:
+
+```json
+{
+  "timestamp": "2025-06-22T10:00:00.000Z",
+  "file": "app.js",
+  "tool": "write_file",
+  "conversation": [...],
+  "toolCall": {...},
+  "gitCommit": "abc123..."
+}
+```
+
+### Shadow Repository
+
+The shadow Git repository at `~/.gemini/history/<project_hash>/` contains:
+- Commits for each checkpoint
+- Complete file state snapshots
+- No branches (linear history)
+- Isolated from your project's `.git/`
+
+<Warning>
+Do not manually modify the shadow repository. It's managed entirely by Gemini CLI.
+</Warning>
+
+## Related Features
+
+<CardGroup cols={3}>
+  <Card title="Session Management" icon="clock-rotate-left" href="sessions">
+    Resume conversations with automatic history saving
+  </Card>
+  <Card title="Rewind" icon="rotate-left" href="commands#rewind">
+    Navigate backward through conversation and file changes
+  </Card>
+  <Card title="Sandboxing" icon="shield" href="sandbox">
+    Isolated execution for additional safety
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="configuration">
+    Enable checkpointing in settings.json
+  </Card>
+  <Card title="Commands Overview" icon="terminal" href="commands">
+    Learn about /restore and /rewind commands
+  </Card>
+</CardGroup>

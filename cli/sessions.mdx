@@ -1,0 +1,396 @@
+---
+title: Session Management
+description: Save, resume, and manage conversation history in Gemini CLI
+---
+
+Session management automatically saves your conversation history so you can resume work where you left off, review past interactions, and manage history across different projects.
+
+## How It Works
+
+<Steps>
+  <Step title="Automatic Saving">
+    Sessions are recorded automatically as you interact with the model—no manual saving required.
+  </Step>
+  <Step title="Project-Scoped Storage">
+    Sessions are stored in `~/.gemini/tmp/<project_hash>/chats/` where `<project_hash>` is unique to your project directory.
+  </Step>
+  <Step title="Resume Anytime">
+    Use `/resume` or `--resume` flag to browse and restore previous conversations with full context.
+  </Step>
+</Steps>
+
+## What Is Saved
+
+Each session automatically captures:
+
+<CardGroup cols={2}>
+  <Card title="Conversation" icon="comments">
+    Your prompts and the model's responses
+  </Card>
+  <Card title="Tool Executions" icon="wrench">
+    All tool inputs and outputs
+  </Card>
+  <Card title="Token Usage" icon="chart-line">
+    Input, output, cached tokens, and statistics
+  </Card>
+  <Card title="Reasoning" icon="brain">
+    Assistant thoughts and reasoning summaries
+  </Card>
+</CardGroup>
+
+<Info>
+Sessions are **project-specific**. Switching directories to a different project switches to that project's session history.
+</Info>
+
+## Resuming Sessions
+
+Resume previous conversations to continue with all prior context restored.
+
+### From the Command Line
+
+Use the `--resume` or `-r` flag when starting Gemini CLI.
+
+<CodeGroup>
+```bash Resume Latest
+gemini --resume
+```
+
+```bash Resume by Index
+# First list sessions (see below)
+gemini --list-sessions
+
+# Then resume by number
+gemini --resume 1
+```
+
+```bash Resume by ID
+gemini --resume a1b2c3d4-e5f6-7890-abcd-ef1234567890
+```
+</CodeGroup>
+
+### From the Interactive Interface
+
+While the CLI is running, use the `/resume` command to open the **Session Browser**.
+
+```bash
+/resume
+```
+
+#### Session Browser Features
+
+<AccordionGroup>
+  <Accordion title="Browse Sessions">
+    Scroll through a list of past sessions with:
+    - Session date and timestamp
+    - Message count
+    - First user prompt for context
+    - Session ID
+  </Accordion>
+
+  <Accordion title="Search Sessions">
+    Press `/` to enter search mode and filter by:
+    - Session ID
+    - Conversation content
+    - Prompts and responses
+  </Accordion>
+
+  <Accordion title="Sort Sessions">
+    Sort sessions by:
+    - Date (newest/oldest)
+    - Message count (most/least)
+  </Accordion>
+
+  <Accordion title="Select Session">
+    - Press `Enter` to resume the selected session
+    - Press `Esc` to exit without resuming
+  </Accordion>
+</AccordionGroup>
+
+## Managing Sessions
+
+Keep your history organized and manage disk space.
+
+### Listing Sessions
+
+View all available sessions for the current project:
+
+```bash
+gemini --list-sessions
+```
+
+**Example Output:**
+
+```text
+Available sessions for this project (3):
+
+  1. Fix bug in auth (2 days ago) [a1b2c3d4]
+  2. Refactor database schema (5 hours ago) [e5f67890]
+  3. Update documentation (Just now) [abcd1234]
+```
+
+### Deleting Sessions
+
+Remove old or unwanted sessions to free up space.
+
+<Tabs>
+  <Tab title="Command Line">
+    Delete by index or ID:
+
+    ```bash
+    gemini --delete-session 2
+    ```
+
+    or
+
+    ```bash
+    gemini --delete-session a1b2c3d4-e5f6-7890-abcd-ef1234567890
+    ```
+  </Tab>
+  <Tab title="Session Browser">
+    <Steps>
+      <Step title="Open Session Browser">
+        ```bash
+        /resume
+        ```
+      </Step>
+      <Step title="Navigate to Session">
+        Use arrow keys to select the session you want to delete.
+      </Step>
+      <Step title="Delete">
+        Press `x` to delete the selected session.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+<Warning>
+When a session is deleted, Gemini CLI also removes all associated data including implementation plans, task trackers, tool outputs, and activity logs.
+</Warning>
+
+## Configuration
+
+Customize session management behavior in your `settings.json` file.
+
+### Session Retention
+
+By default, Gemini CLI automatically cleans up old sessions to prevent indefinite growth.
+
+**Default Policy:** Retain sessions for **30 days**
+
+#### Configure Retention
+
+Edit via `/settings` or manually in `settings.json`:
+
+```json
+{
+  "general": {
+    "sessionRetention": {
+      "enabled": true,
+      "maxAge": "30d",
+      "maxCount": 50,
+      "minRetention": "1d"
+    }
+  }
+}
+```
+
+#### Settings Reference
+
+<ParamField path="enabled" type="boolean" default="true">
+  Master switch for automatic session cleanup.
+</ParamField>
+
+<ParamField path="maxAge" type="string" default="30d">
+  Duration to keep sessions. Sessions older than this are deleted.
+  
+  **Examples:** `"24h"`, `"7d"`, `"4w"`
+</ParamField>
+
+<ParamField path="maxCount" type="number" default="undefined">
+  Maximum number of sessions to retain. Oldest sessions exceeding this count are deleted.
+  
+  **Default:** Unlimited
+</ParamField>
+
+<ParamField path="minRetention" type="string" default="1d">
+  Minimum retention period (safety limit). Sessions newer than this are **never** deleted by automatic cleanup.
+</ParamField>
+
+### Session Limits
+
+Limit the length of individual sessions to control context window size and costs.
+
+```json
+{
+  "model": {
+    "maxSessionTurns": 100
+  }
+}
+```
+
+<ParamField path="model.maxSessionTurns" type="number" default="-1">
+  Maximum number of turns (user and model exchanges) allowed in a single session.
+  
+  Set to `-1` for unlimited (default).
+</ParamField>
+
+#### Behavior When Limit Reached
+
+<Tabs>
+  <Tab title="Interactive Mode">
+    The CLI shows an informational message and stops sending requests. You must manually start a new session.
+  </Tab>
+  <Tab title="Non-Interactive Mode">
+    The CLI exits with an error.
+  </Tab>
+</Tabs>
+
+## Storage Locations
+
+### Session Data
+
+<Tabs>
+  <Tab title="Linux/macOS">
+    ```
+    ~/.gemini/tmp/<project_hash>/chats/
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```
+    C:\Users\<YourUsername>\.gemini\tmp\<project_hash>\chats\
+    ```
+  </Tab>
+</Tabs>
+
+### Associated Data
+
+- **Implementation plans:** `~/.gemini/tmp/<project_hash>/plans/`
+- **Task trackers:** `~/.gemini/tmp/<project_hash>/tasks/`
+- **Tool outputs:** `~/.gemini/tmp/<project_hash>/outputs/`
+- **Activity logs:** `~/.gemini/tmp/<project_hash>/logs/`
+
+## Manual Checkpoints
+
+Beyond automatic session saving, you can create manual conversation checkpoints with tags.
+
+### Using `/chat` Commands
+
+<CodeGroup>
+```bash Save Checkpoint
+/chat save feature-implementation
+```
+
+```bash Resume Checkpoint
+/chat resume feature-implementation
+```
+
+```bash List Checkpoints
+/chat list
+```
+
+```bash Delete Checkpoint
+/chat delete feature-implementation
+```
+</CodeGroup>
+
+### Checkpoint Storage
+
+Manual checkpoints are stored separately from automatic sessions:
+
+<Tabs>
+  <Tab title="Linux/macOS">
+    ```
+    ~/.gemini/tmp/<project_hash>/
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```
+    C:\Users\<YourUsername>\.gemini\tmp\<project_hash>\
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+Manual `/chat` checkpoints are for **conversation state only**. For file modification checkpoints, see [Checkpointing](checkpointing).
+</Note>
+
+### Export Conversations
+
+Export current conversation to Markdown or JSON:
+
+```bash
+/chat share conversation.md
+/chat share conversation.json
+```
+
+If no filename is provided, the CLI generates one automatically.
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Descriptive Tags" icon="tag">
+    When creating manual checkpoints with `/chat save`, use descriptive tags like `before-refactor` or `working-auth`.
+  </Card>
+  <Card title="Regular Cleanup" icon="broom">
+    Periodically review and delete old sessions to manage disk space, even with automatic cleanup enabled.
+  </Card>
+  <Card title="Project Isolation" icon="folder-tree">
+    Remember that sessions are project-scoped. Start the CLI from your project directory to access relevant history.
+  </Card>
+  <Card title="Limit Long Sessions" icon="gauge-high">
+    Set `maxSessionTurns` to prevent context windows from becoming too large and expensive.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Can't find previous session">
+    **Cause:** Sessions are project-specific based on the directory where you run the CLI.
+
+    **Solution:** Navigate to the project directory where the session was created, then run `/resume` or `gemini --resume`.
+  </Accordion>
+
+  <Accordion title="Session browser is empty">
+    **Cause:** No sessions exist for the current project.
+
+    **Solution:** Ensure you're in the correct project directory. Sessions created in other directories won't appear.
+  </Accordion>
+
+  <Accordion title="Session was auto-deleted">
+    **Cause:** Automatic cleanup removed the session based on retention policy.
+
+    **Solution:** Check `general.sessionRetention.maxAge` and `maxCount` settings. Increase retention period or disable automatic cleanup with `"enabled": false`.
+  </Accordion>
+
+  <Accordion title="Resume restores wrong context">
+    **Cause:** Multiple projects may share the same hash if directory structure is similar.
+
+    **Solution:** Verify you're in the correct project directory. The project hash is based on the absolute path.
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={3}>
+  <Card title="Checkpointing" icon="floppy-disk" href="checkpointing">
+    Automatic snapshots before file modifications with `/restore`
+  </Card>
+  <Card title="Memory" icon="brain" href="../tools/memory">
+    Persistent instructional context across sessions
+  </Card>
+  <Card title="Rewind" icon="rotate-left" href="commands#rewind">
+    Navigate backward through conversation history
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Commands Overview" icon="terminal" href="commands">
+    Learn about `/resume`, `/chat`, and `/rewind` commands
+  </Card>
+  <Card title="Configuration" icon="gear" href="configuration">
+    Configure session retention and limits
+  </Card>
+</CardGroup>

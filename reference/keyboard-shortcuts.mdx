@@ -1,0 +1,232 @@
+---
+title: Keyboard Shortcuts
+description: Complete reference for all keyboard shortcuts in Gemini CLI
+---
+
+Gemini CLI ships with a comprehensive set of keyboard shortcuts for editing input, navigating history, and controlling the UI. Use this reference to learn all available key combinations.
+
+## Basic Controls
+
+| Action | Keys |
+| --- | --- |
+| Confirm the current selection or choice | `Enter` |
+| Dismiss dialogs or cancel the current focus | `Esc`, `Ctrl + [` |
+| Cancel the current request or quit the CLI when input is empty | `Ctrl + C` |
+| Exit the CLI when the input buffer is empty | `Ctrl + D` |
+
+## Cursor Movement
+
+| Action | Keys |
+| --- | --- |
+| Move the cursor to the start of the line | `Ctrl + A`, `Home` |
+| Move the cursor to the end of the line | `Ctrl + E`, `End` |
+| Move the cursor up one line | `Up Arrow` |
+| Move the cursor down one line | `Down Arrow` |
+| Move the cursor one character to the left | `Left Arrow` |
+| Move the cursor one character to the right | `Right Arrow`, `Ctrl + F` |
+| Move the cursor one word to the left | `Ctrl + Left Arrow`, `Alt + Left Arrow`, `Alt + B` |
+| Move the cursor one word to the right | `Ctrl + Right Arrow`, `Alt + Right Arrow`, `Alt + F` |
+
+## Editing
+
+| Action | Keys |
+| --- | --- |
+| Delete from the cursor to the end of the line | `Ctrl + K` |
+| Delete from the cursor to the start of the line | `Ctrl + U` |
+| Clear all text in the input field | `Ctrl + C` |
+| Delete the previous word | `Ctrl + Backspace`, `Alt + Backspace`, `Ctrl + W` |
+| Delete the next word | `Ctrl + Delete`, `Alt + Delete`, `Alt + D` |
+| Delete the character to the left | `Backspace`, `Ctrl + H` |
+| Delete the character to the right | `Delete`, `Ctrl + D` |
+| Undo the most recent text edit | `Cmd + Z`, `Alt + Z` |
+| Redo the most recent undone text edit | `Shift + Ctrl + Z`, `Shift + Cmd + Z`, `Shift + Alt + Z` |
+
+## Scrolling
+
+| Action | Keys |
+| --- | --- |
+| Scroll content up | `Shift + Up Arrow` |
+| Scroll content down | `Shift + Down Arrow` |
+| Scroll to the top | `Ctrl + Home`, `Shift + Home` |
+| Scroll to the bottom | `Ctrl + End`, `Shift + End` |
+| Scroll up by one page | `Page Up` |
+| Scroll down by one page | `Page Down` |
+
+## History & Search
+
+| Action | Keys |
+| --- | --- |
+| Show the previous entry in history | `Ctrl + P` |
+| Show the next entry in history | `Ctrl + N` |
+| Start reverse search through history | `Ctrl + R` |
+| Submit the selected reverse-search match | `Enter` |
+| Accept a suggestion while reverse searching | `Tab` |
+| Browse and rewind previous interactions | `Double Esc` |
+
+## Navigation
+
+| Action | Keys |
+| --- | --- |
+| Move selection up in lists | `Up Arrow` |
+| Move selection down in lists | `Down Arrow` |
+| Move up within dialog options | `Up Arrow`, `K` |
+| Move down within dialog options | `Down Arrow`, `J` |
+| Move to the next item or question in a dialog | `Tab` |
+| Move to the previous item or question in a dialog | `Shift + Tab` |
+
+## Suggestions & Completions
+
+| Action | Keys |
+| --- | --- |
+| Accept the inline suggestion | `Tab`, `Enter` |
+| Move to the previous completion option | `Up Arrow`, `Ctrl + P` |
+| Move to the next completion option | `Down Arrow`, `Ctrl + N` |
+| Expand an inline suggestion | `Right Arrow` |
+| Collapse an inline suggestion | `Left Arrow` |
+
+## Text Input
+
+| Action | Keys |
+| --- | --- |
+| Submit the current prompt | `Enter` |
+| Insert a newline without submitting | `Ctrl + Enter`, `Cmd + Enter`, `Alt + Enter`, `Shift + Enter`, `Ctrl + J` |
+| Open the current prompt or the plan in an external editor | `Ctrl + X` |
+| Paste from the clipboard | `Ctrl + V`, `Cmd + V`, `Alt + V` |
+
+## App Controls
+
+| Action | Keys |
+| --- | --- |
+| Toggle detailed error information | `F12` |
+| Toggle the full TODO list | `Ctrl + T` |
+| Show IDE context details | `Ctrl + G` |
+| Toggle Markdown rendering | `Alt + M` |
+| Toggle copy mode when in alternate buffer mode | `Ctrl + S` |
+| Toggle YOLO (auto-approval) mode for tool calls | `Ctrl + Y` |
+| Cycle through approval modes (default, auto_edit, plan) | `Shift + Tab` |
+| Expand and collapse blocks of content | `Ctrl + O` |
+| Expand or collapse a paste placeholder when cursor is over placeholder | `Ctrl + O` |
+| Clear the terminal screen and redraw the UI | `Ctrl + L` |
+| Restart the application | `R` |
+| Suspend the CLI and move it to the background | `Ctrl + Z` |
+
+## Background Shells
+
+| Action | Keys |
+| --- | --- |
+| Toggle current background shell visibility | `Ctrl + B` |
+| Toggle background shell list | `Ctrl + L` |
+| Kill the active background shell | `Ctrl + K` |
+| Confirm selection in background shell list | `Enter` |
+| Dismiss background shell list | `Esc` |
+| Move focus from background shell to Gemini | `Shift + Tab` |
+| Move focus from background shell list to Gemini | `Tab` |
+| Move focus from Gemini to the active shell | `Tab` |
+| Move focus from the shell back to Gemini | `Shift + Tab` |
+
+## Additional Context-Specific Shortcuts
+
+### macOS Specific
+
+<ParamField path="Option + B/F/M" type="keyboard">
+  On macOS only, these are interpreted as `Cmd + B/F/M` even if your terminal isn't configured to send Meta with Option.
+</ParamField>
+
+### Empty Prompt Shortcuts
+
+<ParamField path="!" type="keyboard">
+  On an empty prompt: Enter or exit shell mode
+</ParamField>
+
+<ParamField path="?" type="keyboard">
+  On an empty prompt: Toggle the shortcuts panel above the input
+  
+  Press `Esc`, `Backspace`, any printable key, or a registered app hotkey to close it. The panel also auto-hides while the agent is running/streaming or when action-required dialogs are shown. Press `?` again to close the panel and insert a `?` into the prompt.
+</ParamField>
+
+### UI Mode Toggles
+
+<ParamField path="Tab + Tab" type="keyboard">
+  While typing in the prompt: Toggle between minimal and full UI details when no completion/search interaction is active
+  
+  The selected mode is remembered for future sessions. Full UI remains the default on first run, and single `Tab` keeps its existing completion/focus behavior.
+</ParamField>
+
+<ParamField path="Shift + Tab" type="keyboard">
+  While typing in the prompt: Cycle approval modes (default, auto_edit, and plan)
+  
+  Plan mode is skipped when agent is busy.
+</ParamField>
+
+### Line Continuation
+
+<ParamField path="\ + Enter" type="keyboard">
+  At the end of a line: Insert a newline without leaving single-line mode
+</ParamField>
+
+### Escape Key
+
+<ParamField path="Esc + Esc" type="keyboard">
+  Pressed twice quickly: Clear the input prompt if it is not empty, otherwise browse and rewind previous interactions
+</ParamField>
+
+### Arrow Keys in Input
+
+<ParamField path="Up Arrow / Down Arrow" type="keyboard">
+  When the cursor is at the top or bottom of a single-line input: Navigate backward or forward through prompt history
+</ParamField>
+
+### Number Keys in Dialogs
+
+<ParamField path="1-9 (multi-digit)" type="keyboard">
+  Inside selection dialogs: Jump directly to the numbered radio option and confirm when the full number is entered
+</ParamField>
+
+### Paste Placeholders
+
+<ParamField path="Ctrl + O" type="keyboard">
+  Expand or collapse paste placeholders (`[Pasted Text: X lines]`) inline when the cursor is over the placeholder
+</ParamField>
+
+<ParamField path="Double-click" type="keyboard">
+  On a paste placeholder (alternate buffer mode only): Expand to view full content inline. Double-click again to collapse.
+</ParamField>
+
+## Vim Mode
+
+When vim mode is enabled (toggle with `/vim`), the input area supports vim-style navigation and editing commands in both NORMAL and INSERT modes.
+
+### Vim Mode Features
+
+- **Count support:** Prefix commands with numbers (e.g., `3h`, `5w`, `10G`)
+- **Editing commands:** Delete with `x`, change with `c`, insert with `i`, `a`, `o`, `O`; complex operations like `dd`, `cc`, `dw`, `cw`
+- **INSERT mode:** Standard text input with escape to return to NORMAL mode
+- **NORMAL mode:** Navigate with `h`, `j`, `k`, `l`; jump by words with `w`, `b`, `e`; go to line start/end with `0`, `$`, `^`; go to specific lines with `G` (or `gg` for first line)
+- **Repeat last command:** Use `.` to repeat the last editing operation
+- **Status indicator:** When enabled, shows `[NORMAL]` or `[INSERT]` in the footer
+
+### Enable Vim Mode
+
+```bash
+/vim
+```
+
+The vim mode preference is saved to `~/.gemini/settings.json` and restored between sessions.
+
+## Limitations
+
+<Warning>
+  **Windows Terminal:**
+  - `Shift + Enter` is not supported
+  - `Shift + Tab` is not supported on Node 20 and earlier versions of Node 22
+  
+  **macOS Terminal:**
+  - `Shift + Enter` is not supported
+</Warning>
+
+## Related Commands
+
+- [`/clear`](/reference/slash-commands#clear) - Clear the terminal screen (also `Ctrl + L`)
+- [`/rewind`](/reference/slash-commands#rewind) - Browse and rewind previous interactions (also `Double Esc`)
+- [`/copy`](/reference/slash-commands#copy) - Copy the last output to clipboard
+- [`/vim`](/reference/slash-commands#vim) - Toggle vim mode

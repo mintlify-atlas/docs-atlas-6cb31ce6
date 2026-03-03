@@ -1,0 +1,584 @@
+---
+title: Tools API Reference
+description: Build custom tools for Gemini CLI with full type signatures and implementation patterns
+---
+
+## Overview
+
+The Gemini CLI Tools API enables you to create custom tools that extend the model's capabilities. Tools can interact with the local environment, fetch external data, perform computations, and more.
+
+## Core Interfaces
+
+### ToolBuilder
+
+The main interface that defines a tool's schema and builds executable invocations.
+
+```typescript
+interface ToolBuilder<TParams extends object, TResult extends ToolResult> {
+  /** Internal name used for API calls */
+  name: string;
+
+  /** User-friendly display name */
+  displayName: string;
+
+  /** Description provided to the model */
+  description: string;
+
+  /** Tool categorization for permissions */
+  kind: Kind;
+
+  /** Whether output should be rendered as markdown */
+  isOutputMarkdown: boolean;
+
+  /** Whether tool supports streaming output */
+  canUpdateOutput: boolean;
+
+  /** Whether tool is read-only (no side effects) */
+  isReadOnly: boolean;
+
+  /** Get the function declaration schema */
+  getSchema(modelId?: string): FunctionDeclaration;
+
+  /** Validate parameters and build an executable invocation */
+  build(params: TParams): ToolInvocation<TParams, TResult>;
+}
+```
+
+<ParamField path="name" type="string" required>
+  Unique internal identifier for the tool. Used in API calls to the Gemini model.
+</ParamField>
+
+<ParamField path="displayName" type="string" required>
+  Human-readable name shown to users in confirmations and logs.
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  Clear explanation of what the tool does. This is provided to the model to help it understand when and how to use the tool.
+</ParamField>
+
+<ParamField path="kind" type="Kind" required>
+  Tool category for permission management. See [Tool Kinds](#tool-kinds) below.
+</ParamField>
+
+### ToolInvocation
+
+Represents a validated, ready-to-execute tool call.
+
+```typescript
+interface ToolInvocation<TParams extends object, TResult extends ToolResult> {
+  /** Validated parameters for this invocation */
+  params: TParams;
+
+  /** Get pre-execution description */
+  getDescription(): string;
+
+  /** Determine affected file system paths */
+  toolLocations(): ToolLocation[];
+
+  /** Check if user confirmation is required */
+  shouldConfirmExecute(
+    abortSignal: AbortSignal
+  ): Promise<ToolCallConfirmationDetails | false>;
+
+  /** Execute the tool */
+  execute(
+    signal: AbortSignal,
+    updateOutput?: (output: ToolLiveOutput) => void,
+    shellExecutionConfig?: ShellExecutionConfig
+  ): Promise<TResult>;
+}
+```
+
+<ParamField path="getDescription" type="() => string" required>
+  Returns a markdown string describing what this specific invocation will do. Shown to users before execution.
+</ParamField>
+
+<ParamField path="shouldConfirmExecute" type="(signal: AbortSignal) => Promise<ToolCallConfirmationDetails | false>" required>
+  Determines if user confirmation is needed. Returns confirmation details or `false` if no confirmation required.
+</ParamField>
+
+<ParamField path="execute" type="(signal: AbortSignal, updateOutput?, config?) => Promise<ToolResult>" required>
+  Executes the tool's action and returns the result. Can be aborted via the signal.
+</ParamField>
+
+### ToolResult
+
+The outcome of a tool execution.
+
+```typescript
+interface ToolResult {
+  /** Content sent back to the LLM for context */
+  llmContent: PartListUnion;
+
+  /** User-friendly display (markdown string or rich object) */
+  returnDisplay: ToolResultDisplay;
+
+  /** Error information if the tool call failed */
+  error?: {
+    message: string;
+    type?: ToolErrorType;
+  };
+
+  /** Optional structured data payload */
+  data?: Record<string, unknown>;
+
+  /** Request to execute another tool immediately */
+  tailToolCallRequest?: {
+    name: string;
+    args: Record<string, unknown>;
+  };
+}
+```
+
+<ResponseField name="llmContent" type="PartListUnion" required>
+  Factual content included in the model's conversation history. Can be a string or array of `Part` objects for rich content (images, audio, etc.).
+</ResponseField>
+
+<ResponseField name="returnDisplay" type="ToolResultDisplay" required>
+  User-facing output. Can be:
+  - `string` - Markdown text
+  - `FileDiff` - File modification preview
+  - `AnsiOutput` - Terminal output with ANSI codes
+  - `TodoList` - Task list
+  - `SubagentProgress` - Sub-agent status
+</ResponseField>
+
+<ResponseField name="error" type="object">
+  Present if the tool call failed.
+  
+  <ParamField path="error.message" type="string" required>
+    Human-readable error message.
+  </ParamField>
+  
+  <ParamField path="error.type" type="ToolErrorType">
+    Machine-readable error classification (e.g., `FILE_NOT_FOUND`, `INVALID_TOOL_PARAMS`).
+  </ParamField>
+</ResponseField>
+
+## Base Classes
+
+### DeclarativeTool
+
+Base class for creating custom tools with automatic validation.
+
+```typescript
+abstract class DeclarativeTool<
+  TParams extends object,
+  TResult extends ToolResult
+> implements ToolBuilder<TParams, TResult> {
+  constructor(
+    readonly name: string,
+    readonly displayName: string,
+    readonly description: string,
+    readonly kind: Kind,
+    readonly parameterSchema: unknown,
+    readonly messageBus: MessageBus,
+    readonly isOutputMarkdown: boolean = true,
+    readonly canUpdateOutput: boolean = false,
+    readonly extensionName?: string,
+    readonly extensionId?: string
+  );
+
+  /** Validate raw parameters (override for custom validation) */
+  validateToolParams(params: TParams): string | null;
+
+  /** Build a validated invocation */
+  abstract build(params: TParams): ToolInvocation<TParams, TResult>;
+
+  /** Convenience: build and execute in one step */
+  async buildAndExecute(
+    params: TParams,
+    signal: AbortSignal,
+    updateOutput?: (output: ToolLiveOutput) => void,
+    shellExecutionConfig?: ShellExecutionConfig
+  ): Promise<TResult>;
+}
+```
+
+### BaseDeclarativeTool
+
+Extends `DeclarativeTool` with automatic schema validation and a simplified implementation pattern.
+
+```typescript
+abstract class BaseDeclarativeTool<
+  TParams extends object,
+  TResult extends ToolResult
+> extends DeclarativeTool<TParams, TResult> {
+  /** Override for additional validation beyond JSON schema */
+  protected validateToolParamValues(params: TParams): string | null;
+
+  /** Create the invocation object after validation */
+  protected abstract createInvocation(
+    params: TParams,
+    messageBus: MessageBus,
+    toolName?: string,
+    toolDisplayName?: string
+  ): ToolInvocation<TParams, TResult>;
+}
+```
+
+### BaseToolInvocation
+
+Convenience base class for implementing `ToolInvocation`.
+
+```typescript
+abstract class BaseToolInvocation<
+  TParams extends object,
+  TResult extends ToolResult
+> implements ToolInvocation<TParams, TResult> {
+  constructor(
+    readonly params: TParams,
+    protected readonly messageBus: MessageBus,
+    readonly _toolName?: string,
+    readonly _toolDisplayName?: string,
+    readonly _serverName?: string,
+    readonly _toolAnnotations?: Record<string, unknown>
+  );
+
+  abstract getDescription(): string;
+
+  toolLocations(): ToolLocation[] {
+    return [];
+  }
+
+  /** Override to customize confirmation UI */
+  protected async getConfirmationDetails(
+    abortSignal: AbortSignal
+  ): Promise<ToolCallConfirmationDetails | false>;
+
+  /** Override to provide policy update options */
+  protected getPolicyUpdateOptions(
+    outcome: ToolConfirmationOutcome
+  ): PolicyUpdateOptions | undefined;
+
+  abstract execute(
+    signal: AbortSignal,
+    updateOutput?: (output: ToolLiveOutput) => void,
+    shellExecutionConfig?: ShellExecutionConfig
+  ): Promise<TResult>;
+}
+```
+
+## Tool Kinds
+
+The `Kind` enum categorizes tools for permission management and parallel execution.
+
+```typescript
+enum Kind {
+  Read = 'read',           // Read files/data
+  Edit = 'edit',           // Modify files
+  Delete = 'delete',       // Delete resources
+  Move = 'move',           // Move/rename
+  Search = 'search',       // Search operations
+  Execute = 'execute',     // Run commands
+  Think = 'think',         // Reasoning/planning
+  Agent = 'agent',         // Sub-agent invocation
+  Fetch = 'fetch',         // Network requests
+  Communicate = 'communicate', // User interaction
+  Plan = 'plan',           // Planning operations
+  SwitchMode = 'switch_mode',  // Mode changes
+  Other = 'other'          // Uncategorized
+}
+```
+
+**Read-only kinds** (safe for parallel execution):
+- `Kind.Read`
+- `Kind.Search`
+- `Kind.Fetch`
+
+**Mutator kinds** (have side effects):
+- `Kind.Edit`
+- `Kind.Delete`
+- `Kind.Move`
+- `Kind.Execute`
+
+## Creating a Custom Tool
+
+### Step 1: Define Parameters Interface
+
+```typescript
+interface MyToolParams {
+  query: string;
+  limit?: number;
+}
+```
+
+### Step 2: Define Parameter Schema
+
+```typescript
+const MY_TOOL_SCHEMA = {
+  type: 'object',
+  properties: {
+    query: {
+      type: 'string',
+      description: 'Search query'
+    },
+    limit: {
+      type: 'number',
+      description: 'Maximum results to return',
+      default: 10
+    }
+  },
+  required: ['query']
+};
+```
+
+### Step 3: Implement Tool Invocation
+
+```typescript
+class MyToolInvocation extends BaseToolInvocation<
+  MyToolParams,
+  ToolResult
+> {
+  getDescription(): string {
+    return `Searching for "${this.params.query}" (limit: ${this.params.limit || 10})`;
+  }
+
+  async execute(signal: AbortSignal): Promise<ToolResult> {
+    try {
+      // Perform the actual work
+      const results = await performSearch(
+        this.params.query,
+        this.params.limit || 10
+      );
+
+      return {
+        llmContent: `Found ${results.length} results for "${this.params.query}"`,
+        returnDisplay: formatResults(results)
+      };
+    } catch (error) {
+      return {
+        llmContent: `Search failed: ${error.message}`,
+        returnDisplay: error.message,
+        error: {
+          message: error.message,
+          type: ToolErrorType.EXECUTION_FAILED
+        }
+      };
+    }
+  }
+}
+```
+
+### Step 4: Implement Tool Builder
+
+```typescript
+class MyTool extends BaseDeclarativeTool<MyToolParams, ToolResult> {
+  constructor(messageBus: MessageBus) {
+    super(
+      'my_custom_search',           // name
+      'Custom Search',               // displayName
+      'Searches the custom database', // description
+      Kind.Search,                   // kind
+      MY_TOOL_SCHEMA,               // parameterSchema
+      messageBus,                    // messageBus
+      true,                          // isOutputMarkdown
+      false                          // canUpdateOutput
+    );
+  }
+
+  protected validateToolParamValues(params: MyToolParams): string | null {
+    if (params.limit && params.limit < 1) {
+      return 'limit must be at least 1';
+    }
+    return null;
+  }
+
+  protected createInvocation(
+    params: MyToolParams,
+    messageBus: MessageBus,
+    toolName?: string,
+    toolDisplayName?: string
+  ): ToolInvocation<MyToolParams, ToolResult> {
+    return new MyToolInvocation(
+      params,
+      messageBus,
+      toolName,
+      toolDisplayName
+    );
+  }
+}
+```
+
+### Step 5: Register the Tool
+
+```typescript
+const toolRegistry = config.getToolRegistry();
+const myTool = new MyTool(messageBus);
+toolRegistry.registerTool(myTool);
+```
+
+## Built-in Tools
+
+Gemini CLI includes several built-in tools:
+
+### File System Tools
+- `LSTool` - List directory contents
+- `ReadFileTool` - Read file content
+- `WriteFileTool` - Write to files
+- `EditTool` - In-place file modifications
+- `GrepTool` - Search for patterns
+- `GlobTool` - Find files by glob patterns
+- `ReadManyFilesTool` - Read multiple files
+
+### Execution Tools
+- `ShellTool` - Execute shell commands
+
+### Web Tools
+- `WebFetchTool` - Fetch content from URLs
+- `WebSearchTool` - Perform web searches
+
+### Other Tools
+- `MemoryTool` - Interact with AI memory
+
+## Tool Execution Flow
+
+1. **Model Request** - Model returns a `FunctionCall` with tool name and arguments
+2. **Tool Retrieval** - Core looks up the tool in the `ToolRegistry`
+3. **Parameter Validation** - `validateToolParams()` is called
+4. **Build Invocation** - `build()` creates a `ToolInvocation`
+5. **Confirmation** - `shouldConfirmExecute()` checks if user approval is needed
+6. **User Confirmation** - If required, CLI prompts the user
+7. **Execution** - `execute()` performs the tool's action
+8. **Result Processing** - `ToolResult` is returned
+9. **Response to Model** - `llmContent` is sent back to the model
+10. **Display to User** - `returnDisplay` is shown in the CLI
+
+## Advanced Features
+
+### Streaming Output
+
+Tools can provide live updates during execution:
+
+```typescript
+async execute(
+  signal: AbortSignal,
+  updateOutput?: (output: ToolLiveOutput) => void
+): Promise<ToolResult> {
+  updateOutput?.('Processing step 1...');
+  await step1();
+  
+  updateOutput?.('Processing step 2...');
+  await step2();
+  
+  return {
+    llmContent: 'Completed',
+    returnDisplay: 'All steps completed successfully'
+  };
+}
+```
+
+### Rich Content Results
+
+Return structured content to the model:
+
+```typescript
+return {
+  llmContent: [
+    'Analysis results:',
+    {
+      type: 'image',
+      image: {
+        url: 'data:image/png;base64,...'
+      }
+    }
+  ],
+  returnDisplay: '![Analysis](data:image/png;base64,...)'
+};
+```
+
+### Tail Tool Calls
+
+Chain tool executions:
+
+```typescript
+return {
+  llmContent: 'Preprocessed data',
+  returnDisplay: 'Data ready for analysis',
+  tailToolCallRequest: {
+    name: 'analyze_data',
+    args: { data: processedData }
+  }
+};
+```
+
+### Custom Confirmation UI
+
+```typescript
+protected async getConfirmationDetails(
+  abortSignal: AbortSignal
+): Promise<ToolCallConfirmationDetails | false> {
+  return {
+    type: 'exec',
+    title: 'Confirm Command Execution',
+    command: this.params.command,
+    rootCommand: this.params.command.split(' ')[0],
+    rootCommands: [this.params.command.split(' ')[0]],
+    onConfirm: async (outcome: ToolConfirmationOutcome) => {
+      // Handle confirmation outcome
+    }
+  };
+}
+```
+
+## Tool Discovery
+
+Tools can be discovered dynamically through:
+
+### Command-based Discovery
+
+Configure `tools.discoveryCommand` in `settings.json`:
+
+```json
+{
+  "tools": {
+    "discoveryCommand": "./discover-tools.sh",
+    "callCommand": "./call-tool.sh"
+  }
+}
+```
+
+The discovery command should output JSON:
+
+```json
+[
+  {
+    "name": "custom_tool",
+    "description": "Does something custom",
+    "parametersJsonSchema": {
+      "type": "object",
+      "properties": {
+        "input": { "type": "string" }
+      }
+    }
+  }
+]
+```
+
+### MCP-based Discovery
+
+Configure MCP servers in `settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "node",
+      "args": ["server.js"]
+    }
+  }
+}
+```
+
+The CLI connects to MCP servers and discovers tools automatically. Tool names are prefixed with the server alias: `my-server__tool_name`.
+
+## Best Practices
+
+1. **Clear Descriptions** - Provide detailed descriptions to help the model understand when to use the tool
+2. **Validate Thoroughly** - Validate all parameters before execution
+3. **Handle Errors Gracefully** - Return structured errors with helpful messages
+4. **Use Appropriate Kinds** - Categorize tools correctly for permission management
+5. **Confirm Destructive Operations** - Always require confirmation for mutating operations
+6. **Provide Meaningful Output** - Both `llmContent` and `returnDisplay` should be informative
+7. **Support Cancellation** - Respect the `AbortSignal` for long-running operations
+8. **Stream Progress** - Use `updateOutput` for operations that take time

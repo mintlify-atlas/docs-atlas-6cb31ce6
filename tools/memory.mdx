@@ -1,0 +1,150 @@
+---
+title: Memory Tool
+description: Persist facts and preferences across sessions with the save_memory tool
+---
+
+The `save_memory` tool allows the Gemini agent to persist specific facts, user preferences, and project details across sessions by saving them to your global `GEMINI.md` file.
+
+## Overview
+
+When Gemini needs to remember something for future sessions—like your coding preferences, project conventions, or frequently referenced information—it uses the `save_memory` tool to append that information to your global context file.
+
+<Info>
+Memory is automatically loaded in all future sessions as part of the hierarchical context system.
+</Info>
+
+## How It Works
+
+<Steps>
+  <Step title="Agent identifies important information">
+    During conversation, Gemini recognizes facts worth preserving (e.g., "User prefers functional programming")
+  </Step>
+  <Step title="Tool is called">
+    The agent calls `save_memory` with the fact to preserve
+  </Step>
+  <Step title="Fact is appended">
+    The information is added to `## Gemini Added Memories` section in `~/.gemini/GEMINI.md`
+  </Step>
+  <Step title="Available in future sessions">
+    Next time you start Gemini CLI, the saved memories are automatically loaded
+  </Step>
+</Steps>
+
+## Technical Reference
+
+<ParamField path="fact" type="string" required>
+  A clear, self-contained statement in natural language describing the information to remember
+</ParamField>
+
+**Storage location:** `~/.gemini/GEMINI.md` (global context file)
+
+**Format:** Bulleted list items under the `## Gemini Added Memories` heading
+
+**Loading:** Automatically included in the hierarchical context for all future sessions
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="User Preferences" icon="user">
+    "I prefer functional programming over OOP"
+    
+    "Always use TypeScript for new projects"
+  </Card>
+  <Card title="Project Conventions" icon="code">
+    "This codebase uses React hooks exclusively"
+    
+    "Follow the company's security review checklist"
+  </Card>
+  <Card title="Environment Details" icon="server">
+    "Database runs on port 5433, not default 5432"
+    
+    "Use staging API key for testing"
+  </Card>
+  <Card title="Aliases & Shortcuts" icon="terminal">
+    "User's git alias: 'gp' means 'git push'"
+    
+    "npm run dev:local includes hot reload"
+  </Card>
+</CardGroup>
+
+## Examples
+
+### Saving a preference
+
+```
+> I prefer using async/await over promises
+```
+
+Gemini might respond:
+```
+I'll remember that you prefer async/await. Let me save this preference.
+```
+
+The tool saves to `~/.gemini/GEMINI.md`:
+```markdown
+## Gemini Added Memories
+- User prefers using async/await over promises
+```
+
+### Saving project information
+
+```
+> Our team uses Conventional Commits for all commit messages
+```
+
+Saved memory:
+```markdown
+## Gemini Added Memories
+- Team uses Conventional Commits for all commit messages
+```
+
+## Managing Saved Memories
+
+You can view and edit saved memories by:
+
+1. **Viewing with `/memory show`**
+   ```bash
+   /memory show
+   ```
+   This displays the full hierarchical context including saved memories
+
+2. **Editing directly**
+   Open `~/.gemini/GEMINI.md` in your editor and modify the `## Gemini Added Memories` section
+
+3. **Refreshing context**
+   After manual edits, use `/memory refresh` to reload the context
+
+## Best Practices
+
+<Accordion title="Keep memories concise and specific">
+  Each memory should be a single, clear statement. Avoid long paragraphs.
+  
+  **Good:** "User prefers tabs over spaces (4-space width)"
+  
+  **Bad:** "The user mentioned they like tabs better than spaces, and specifically they want 4 spaces worth of width when tabs are displayed..."
+</Accordion>
+
+<Accordion title="Avoid duplicates">
+  Gemini usually checks before saving duplicate information, but you can manually clean up the `GEMINI.md` file if needed.
+</Accordion>
+
+<Accordion title="Use for persistent information only">
+  Don't save temporary task details. Use checkpoints or chat history instead.
+</Accordion>
+
+## Related Tools
+
+<CardGroup cols={2}>
+  <Card title="GEMINI.md Reference" icon="file-lines" href="/reference/gemini-md">
+    Learn about the hierarchical context system
+  </Card>
+  <Card title="Context Management" icon="folder-tree" href="/concepts/context">
+    Understand how context files work
+  </Card>
+  <Card title="Memory Command" icon="brain" href="/reference/slash-commands#memory">
+    View and manage memories with /memory
+  </Card>
+  <Card title="Checkpointing" icon="clock-rotate-left" href="/cli/checkpointing">
+    Save conversation state for later
+  </Card>
+</CardGroup>

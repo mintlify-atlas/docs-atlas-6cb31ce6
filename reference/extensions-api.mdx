@@ -1,0 +1,480 @@
+---
+title: Extensions API Reference
+description: Complete reference for building Gemini CLI extensions with type signatures and configuration options
+---
+
+## Extension Configuration
+
+Extensions are defined in a `gemini-extension.json` manifest file that specifies the extension's metadata, features, and configuration.
+
+### ExtensionConfig
+
+The root configuration object for a Gemini CLI extension.
+
+<ParamField path="name" type="string" required>
+  The unique identifier for the extension. Must be lowercase, use dashes instead of underscores or spaces, and match the extension directory name.
+  
+  ```json
+  "name": "my-extension"
+  ```
+</ParamField>
+
+<ParamField path="version" type="string" required>
+  Semantic version of the extension.
+  
+  ```json
+  "version": "1.0.0"
+  ```
+</ParamField>
+
+<ParamField path="description" type="string">
+  A short description displayed on geminicli.com/extensions and in extension listings.
+  
+  ```json
+  "description": "Provides tools for AWS resource management"
+  ```
+</ParamField>
+
+<ParamField path="mcpServers" type="Record<string, MCPServerConfig>">
+  Map of MCP server names to their configurations. These servers are loaded on startup alongside servers in `settings.json`. If both define a server with the same name, `settings.json` takes precedence.
+  
+  ```json
+  "mcpServers": {
+    "my-server": {
+      "command": "node",
+      "args": ["${extensionPath}/server.js"],
+      "cwd": "${extensionPath}"
+    }
+  }
+  ```
+  
+  Use `${extensionPath}` for portability. All MCP server options are supported except `trust`.
+</ParamField>
+
+<ParamField path="contextFileName" type="string | string[]">
+  Name(s) of markdown files containing context loaded into every session. Defaults to `GEMINI.md` if present.
+  
+  ```json
+  "contextFileName": "CONTEXT.md"
+  ```
+  
+  Or multiple files:
+  
+  ```json
+  "contextFileName": ["CONTEXT.md", "EXAMPLES.md"]
+  ```
+</ParamField>
+
+<ParamField path="excludeTools" type="string[]">
+  Array of tool names to exclude from the model. Supports command-specific restrictions.
+  
+  ```json
+  "excludeTools": ["run_shell_command", "run_shell_command(rm -rf)"]
+  ```
+</ParamField>
+
+<ParamField path="settings" type="ExtensionSetting[]">
+  Settings that users provide during installation (API keys, URLs, etc.). Values are stored in a `.env` file within the extension directory.
+  
+  ```json
+  "settings": [
+    {
+      "name": "API Key",
+      "description": "Your API key for the service",
+      "envVar": "MY_API_KEY",
+      "sensitive": true
+    }
+  ]
+  ```
+</ParamField>
+
+<ParamField path="themes" type="CustomTheme[]">
+  Custom color themes contributed by the extension.
+  
+  ```json
+  "themes": [
+    {
+      "name": "forest",
+      "type": "custom",
+      "background": { "primary": "#1a362a" },
+      "text": { "primary": "#a6e3a1" },
+      "status": { "success": "#76c076" },
+      "border": { "default": "#4a6c5a" }
+    }
+  ]
+  ```
+</ParamField>
+
+<ParamField path="plan" type="object">
+  Planning features configuration.
+  
+  <ParamField path="plan.directory" type="string">
+    Directory where planning artifacts are stored. Fallback if user hasn't specified a plan directory.
+  </ParamField>
+  
+  ```json
+  "plan": {
+    "directory": ".gemini/plans"
+  }
+  ```
+</ParamField>
+
+## Extension Settings
+
+### ExtensionSetting
+
+Defines user-configurable settings for extensions.
+
+<ParamField path="name" type="string" required>
+  Display name shown to users.
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  Clear explanation of what the setting is used for.
+</ParamField>
+
+<ParamField path="envVar" type="string" required>
+  Environment variable name where the value is stored and made available to MCP servers.
+</ParamField>
+
+<ParamField path="sensitive" type="boolean">
+  If `true`, the value is stored in the system keychain and obfuscated in the UI.
+</ParamField>
+
+## Extension Structure
+
+Extensions support multiple feature types through their directory structure:
+
+### Custom Commands
+
+Place TOML files in a `commands/` subdirectory. The directory structure determines the command name.
+
+**For extension named `gcp`:**
+- `commands/deploy.toml` → `/deploy`
+- `commands/gcs/sync.toml` → `/gcs:sync`
+
+```toml
+# commands/deploy.toml
+prompt = """
+Deploy the application to production.
+Run: !{./deploy.sh}
+"""
+```
+
+### Hooks
+
+Define hooks in `hooks/hooks.json` to intercept and customize CLI behavior.
+
+```json
+{
+  "BeforeTool": [
+    {
+      "matcher": "write_file",
+      "hooks": [
+        {
+          "name": "security-check",
+          "type": "command",
+          "command": "${extensionPath}/hooks/check-security.sh",
+          "timeout": 5000
+        }
+      ]
+    }
+  ]
+}
+```
+
+See the [Hooks Reference](/reference/hooks) for detailed information.
+
+### Agent Skills
+
+Place skill definitions in a `skills/` directory. Each skill is a subdirectory with a `SKILL.md` file.
+
+```
+skills/
+  security-audit/
+    SKILL.md
+```
+
+```markdown
+---
+name: security-audit
+description: Expertise in auditing code for security vulnerabilities
+---
+
+# Security Auditor
+
+You are an expert security researcher...
+```
+
+### Sub-agents
+
+<Note>Sub-agents are a preview feature under active development.</Note>
+
+Provide sub-agents by adding agent definition files (`.md`) to an `agents/` directory.
+
+### Policy Engine
+
+Contribute policy rules and safety checkers by creating a `policies/` directory with `.toml` files.
+
+```toml
+# policies/security.toml
+[[rule]]
+toolName = "my_server__dangerous_tool"
+decision = "ask_user"
+priority = 100
+
+[[safety_checker]]
+toolName = "my_server__write_data"
+priority = 200
+[safety_checker.checker]
+type = "in-process"
+name = "allowed-path"
+required_context = ["environment"]
+```
+
+<Warning>
+Extension policies cannot set `allow` decisions or `yolo` mode. Extensions cannot bypass security measures without user confirmation.
+</Warning>
+
+Extension policies run in tier 2, between workspace policies (tier 2) and user/admin policies (tier 1).
+
+## Variables
+
+Gemini CLI supports variable substitution in `gemini-extension.json` and `hooks/hooks.json`.
+
+<ParamField path="${extensionPath}" type="string">
+  Absolute path to the extension's directory.
+  
+  ```json
+  "command": "${extensionPath}/server.js"
+  ```
+</ParamField>
+
+<ParamField path="${workspacePath}" type="string">
+  Absolute path to the current workspace.
+  
+  ```json
+  "cwd": "${workspacePath}"
+  ```
+</ParamField>
+
+<ParamField path="${/}" type="string">
+  Platform-specific path separator (`/` on Unix, `\` on Windows).
+  
+  ```json
+  "args": ["${extensionPath}${/}bin${/}server"]
+  ```
+</ParamField>
+
+## Extension Lifecycle
+
+Extensions are loaded from `~/.gemini/extensions/` and managed through the extension loader.
+
+### ExtensionLoader API
+
+The `ExtensionLoader` abstract class provides lifecycle management for extensions.
+
+```typescript
+abstract class ExtensionLoader {
+  /**
+   * Get all currently known extensions (active and inactive)
+   */
+  abstract getExtensions(): GeminiCLIExtension[];
+
+  /**
+   * Initialize all active extensions
+   */
+  async start(config: Config): Promise<void>;
+
+  /**
+   * Start a specific extension
+   */
+  protected async startExtension(extension: GeminiCLIExtension): Promise<void>;
+
+  /**
+   * Stop a specific extension
+   */
+  protected async stopExtension(extension: GeminiCLIExtension): Promise<void>;
+
+  /**
+   * Restart an extension (stop then start)
+   */
+  async restartExtension(extension: GeminiCLIExtension): Promise<void>;
+}
+```
+
+### Events
+
+The extension loader emits events during lifecycle operations:
+
+```typescript
+interface ExtensionEvents {
+  extensionsStarting: ExtensionsStartingEvent[];
+  extensionsStopping: ExtensionsStoppingEvent[];
+}
+
+interface ExtensionsStartingEvent {
+  total: number;
+  completed: number;
+}
+
+interface ExtensionsStoppingEvent {
+  total: number;
+  completed: number;
+}
+```
+
+## CLI Commands
+
+### Installation
+
+Install from GitHub or local path:
+
+```bash
+gemini extensions install <source> [--ref <ref>] [--auto-update] [--consent]
+```
+
+<ParamField path="source" type="string" required>
+  GitHub URL or local path of the extension.
+</ParamField>
+
+<ParamField path="--ref" type="string">
+  Git ref (branch, tag, or commit) to install.
+</ParamField>
+
+<ParamField path="--auto-update" type="boolean">
+  Enable automatic updates for this extension.
+</ParamField>
+
+<ParamField path="--pre-release" type="boolean">
+  Enable installation of pre-release versions.
+</ParamField>
+
+<ParamField path="--consent" type="boolean">
+  Skip the confirmation prompt (acknowledges security risks).
+</ParamField>
+
+### Management Commands
+
+```bash
+# Uninstall extensions
+gemini extensions uninstall <name...>
+
+# Enable/disable
+gemini extensions enable <name> [--scope <user|workspace>]
+gemini extensions disable <name> [--scope <user|workspace>]
+
+# Update
+gemini extensions update <name>
+gemini extensions update --all
+
+# Configure settings
+gemini extensions config <name> [setting] [--scope <scope>]
+```
+
+### Development Commands
+
+```bash
+# Create from template
+gemini extensions new <path> [template]
+
+# Link for development
+gemini extensions link <path>
+```
+
+## Conflict Resolution
+
+Extension commands have the lowest precedence. If a name conflicts with a user or project command, the extension command is prefixed with the extension name:
+
+```
+/gcp.deploy  # Extension command
+/deploy      # User/project command takes precedence
+```
+
+## Examples
+
+### Basic Extension
+
+```json
+{
+  "name": "aws-tools",
+  "version": "1.0.0",
+  "description": "AWS resource management tools",
+  "mcpServers": {
+    "aws": {
+      "command": "node",
+      "args": ["${extensionPath}/server.js"],
+      "cwd": "${extensionPath}",
+      "env": {
+        "AWS_REGION": "us-east-1"
+      }
+    }
+  },
+  "contextFileName": "AWS_CONTEXT.md"
+}
+```
+
+### Extension with Settings
+
+```json
+{
+  "name": "api-integration",
+  "version": "2.1.0",
+  "description": "Custom API integration",
+  "settings": [
+    {
+      "name": "API Endpoint",
+      "description": "Base URL for the API",
+      "envVar": "API_BASE_URL",
+      "sensitive": false
+    },
+    {
+      "name": "API Token",
+      "description": "Authentication token",
+      "envVar": "API_TOKEN",
+      "sensitive": true
+    }
+  ],
+  "mcpServers": {
+    "api-server": {
+      "command": "python",
+      "args": ["${extensionPath}/server.py"]
+    }
+  }
+}
+```
+
+### Extension with Custom Theme
+
+```json
+{
+  "name": "ocean-theme",
+  "version": "1.0.0",
+  "description": "Ocean-inspired color theme",
+  "themes": [
+    {
+      "name": "deep-ocean",
+      "type": "custom",
+      "background": {
+        "primary": "#001f3f"
+      },
+      "text": {
+        "primary": "#7fdbff",
+        "secondary": "#39cccc",
+        "link": "#0074d9"
+      },
+      "status": {
+        "success": "#2ecc40",
+        "warning": "#ff851b",
+        "error": "#ff4136"
+      },
+      "border": {
+        "default": "#0074d9"
+      },
+      "ui": {
+        "comment": "#39cccc"
+      }
+    }
+  ]
+}
+```

@@ -1,0 +1,241 @@
+---
+title: Shell Command Execution
+description: Execute shell commands directly from the Gemini CLI
+icon: terminal
+---
+
+The `run_shell_command` tool allows the Gemini model to execute commands directly on your system's shell, enabling interaction with your environment beyond simple file edits.
+
+## Overview
+
+Commands execute using platform-specific shells:
+- **Windows:** `powershell.exe -NoProfile -Command`
+- **macOS/Linux:** `bash -c`
+
+The tool sets `GEMINI_CLI=1` environment variable in all subprocess environments, allowing scripts to detect they're running within the Gemini CLI.
+
+## Parameters
+
+<ParamField path="command" type="string" required>
+  The exact shell command to execute
+</ParamField>
+
+<ParamField path="description" type="string">
+  Brief description shown to the user for confirmation
+</ParamField>
+
+<ParamField path="dir_path" type="string">
+  Absolute or relative path from workspace root where the command runs
+</ParamField>
+
+<ParamField path="is_background" type="boolean" default="false">
+  Whether to move the process to the background immediately after starting
+</ParamField>
+
+## Return Value
+
+The tool returns a JSON object containing:
+
+```typescript
+{
+  "Command": string,      // The executed command
+  "Directory": string,    // The execution path
+  "Stdout": string,       // Standard output
+  "Stderr": string,       // Standard error
+  "Exit Code": number,    // Process return code
+  "Background PIDs": []   // PIDs of background processes
+}
+```
+
+## Configuration
+
+Configure shell behavior in your `settings.json` or use `/settings` command.
+
+### Interactive Shell
+
+Enable interactive commands with pseudo-terminal support:
+
+```json
+{
+  "tools": {
+    "shell": {
+      "enableInteractiveShell": true,
+      "showColor": true,
+      "pager": "less"
+    }
+  }
+}
+```
+
+<ParamField path="enableInteractiveShell" type="boolean" default="false">
+  Uses `node-pty` for real-time interaction. Enables support for interactive commands like `vim`, `nano`, `htop`, and `git rebase -i`.
+</ParamField>
+
+<ParamField path="showColor" type="boolean" default="false">
+  Preserves ANSI colors in output. Only applies when `enableInteractiveShell` is enabled.
+</ParamField>
+
+<ParamField path="pager" type="string" default="cat">
+  Custom pager for shell output. Only applies when `enableInteractiveShell` is enabled.
+</ParamField>
+
+<ParamField path="inactivityTimeout" type="number">
+  Seconds to wait for output before killing the process
+</ParamField>
+
+<Info>
+When an interactive command is running, press `Tab` to focus on the interactive shell. Terminal output, including complex TUIs, will be rendered correctly.
+</Info>
+
+### Command Restrictions
+
+Control which commands can be executed using allowlist and blocklist settings.
+
+#### Allowlist Specific Commands
+
+Restrict to only `git` and `npm` commands:
+
+```json
+{
+  "tools": {
+    "core": ["run_shell_command(git)", "run_shell_command(npm)"]
+  }
+}
+```
+
+**Result:**
+- ✅ `git status` - Allowed
+- ✅ `npm install` - Allowed  
+- ❌ `ls -l` - Blocked
+
+#### Block Specific Commands
+
+Allow all commands except `rm`:
+
+```json
+{
+  "tools": {
+    "core": ["run_shell_command"],
+    "exclude": ["run_shell_command(rm)"]
+  }
+}
+```
+
+**Result:**
+- ❌ `rm -rf /` - Blocked
+- ✅ `git status` - Allowed
+- ✅ `npm install` - Allowed
+
+<Warning>
+Blocklist takes precedence over allowlist. If a command appears in both lists, it will be blocked.
+</Warning>
+
+### Command Validation
+
+The validation logic provides security and flexibility:
+
+1. **Command chaining disabled:** Commands chained with `&&`, `||`, or `;` are split and validated separately. If any part is disallowed, the entire command is blocked.
+
+2. **Prefix matching:** Allowing `git` permits `git status`, `git log`, etc.
+
+3. **Blocklist precedence:** `tools.exclude` is checked first. Blocked commands are denied even if allowed in `tools.core`.
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Build Scripts" icon="hammer">
+    Run project builds and compilation tasks
+  </Card>
+  <Card title="Test Suites" icon="vial">
+    Execute test runners and validation scripts
+  </Card>
+  <Card title="Version Control" icon="code-branch">
+    Initialize and manage Git repositories
+  </Card>
+  <Card title="Dependencies" icon="box">
+    Install and update project dependencies
+  </Card>
+  <Card title="Dev Servers" icon="server">
+    Start development servers and watchers
+  </Card>
+  <Card title="Database Tasks" icon="database">
+    Run migrations and database scripts
+  </Card>
+</CardGroup>
+
+## Examples
+
+### Running Tests
+
+```bash
+# Execute test suite
+run_shell_command({
+  command: "npm test",
+  description: "Run project tests",
+  dir_path: "./"
+})
+```
+
+### Starting a Dev Server
+
+```bash
+# Start background server
+run_shell_command({
+  command: "npm run dev",
+  description: "Start development server",
+  is_background: true
+})
+```
+
+### Git Operations
+
+```bash
+# Check repository status
+run_shell_command({
+  command: "git status",
+  description: "Check Git status"
+})
+```
+
+## Security Considerations
+
+<Warning>
+**Be cautious when executing commands**, especially those constructed from user input, to prevent security vulnerabilities.
+</Warning>
+
+- Always check `Stderr`, `Error`, and `Exit Code` fields to determine success
+- Background processes continue running after the tool returns
+- The `Background PIDs` field contains process IDs for background tasks
+- Environment variables can be restricted via sanitization policies
+
+## Environment Variables
+
+**Automatic Environment Variable:**
+
+```bash
+GEMINI_CLI=1
+```
+
+This variable is set in all subprocess environments, allowing scripts to detect execution within Gemini CLI.
+
+**Example detection script:**
+
+```bash
+#!/bin/bash
+if [ "$GEMINI_CLI" = "1" ]; then
+  echo "Running in Gemini CLI"
+else
+  echo "Running in standard shell"
+fi
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Shell Commands Tutorial" icon="book" href="/cli/tutorials/shell-commands">
+    Learn practical shell command patterns
+  </Card>
+  <Card title="Sandboxing" icon="box" href="/cli/sandbox">
+    Isolate command execution for enhanced security
+  </Card>
+</CardGroup>

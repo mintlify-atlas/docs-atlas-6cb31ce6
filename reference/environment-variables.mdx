@@ -1,0 +1,543 @@
+---
+title: Environment Variables
+description: Configure Gemini CLI using environment variables and .env files
+icon: terminal
+---
+
+Gemini CLI supports configuration through environment variables, which can be set in your shell profile, system environment, or `.env` files.
+
+## .env File Loading
+
+The CLI automatically loads environment variables from `.env` files in the following order:
+
+<Steps>
+  <Step title="Current Directory">
+    `.env` file in the current working directory
+  </Step>
+  
+  <Step title="Parent Directories">
+    Searches upward in parent directories until finding an `.env` file, reaching a `.git` folder, or reaching the home directory
+  </Step>
+  
+  <Step title="Home Directory">
+    `~/.env` in the user's home directory
+  </Step>
+</Steps>
+
+<Warning>
+Some environment variables (like `DEBUG` and `DEBUG_MODE`) are automatically excluded from project `.env` files to prevent interference. Use `.gemini/.env` files if you need to set these for Gemini CLI specifically.
+</Warning>
+
+## Authentication
+
+<ParamField path="GEMINI_API_KEY" type="string">
+  Your API key for the Gemini API
+  
+  Get your key from [Google AI Studio](https://aistudio.google.com/apikey)
+  
+  ```bash
+  export GEMINI_API_KEY="your-api-key-here"
+  ```
+</ParamField>
+
+<ParamField path="GOOGLE_API_KEY" type="string">
+  Your Google Cloud API key (required for Vertex AI in express mode)
+  
+  ```bash
+  export GOOGLE_API_KEY="your-google-api-key"
+  ```
+</ParamField>
+
+<ParamField path="GOOGLE_APPLICATION_CREDENTIALS" type="string">
+  Path to your Google Application Credentials JSON file
+  
+  ```bash
+  export GOOGLE_APPLICATION_CREDENTIALS="/path/to/credentials.json"
+  ```
+  
+  ```powershell
+  # Windows PowerShell
+  $env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\credentials.json"
+  ```
+</ParamField>
+
+<ParamField path="GOOGLE_CLOUD_PROJECT" type="string">
+  Your Google Cloud Project ID (required for Code Assist or Vertex AI)
+  
+  ```bash
+  export GOOGLE_CLOUD_PROJECT="your-project-id"
+  ```
+  
+  <Info>
+  In Cloud Shell, this defaults to a special project for Cloud Shell users. To use a different project in Cloud Shell, define it in a `.env` file.
+  </Info>
+</ParamField>
+
+<ParamField path="GOOGLE_CLOUD_LOCATION" type="string">
+  Your Google Cloud Project Location (required for Vertex AI in non-express mode)
+  
+  ```bash
+  export GOOGLE_CLOUD_LOCATION="us-central1"
+  ```
+</ParamField>
+
+<ParamField path="GOOGLE_GENAI_USE_VERTEXAI" type="boolean">
+  Enable Vertex AI mode
+  
+  ```bash
+  export GOOGLE_GENAI_USE_VERTEXAI=true
+  ```
+</ParamField>
+
+<ParamField path="GOOGLE_GENAI_API_VERSION" type="string">
+  Specifies the API version to use for Gemini API requests
+  
+  ```bash
+  export GOOGLE_GENAI_API_VERSION="v1"
+  ```
+</ParamField>
+
+## Model Configuration
+
+<ParamField path="GEMINI_MODEL" type="string">
+  Specifies the default Gemini model to use
+  
+  Overrides the hardcoded default
+  
+  ```bash
+  export GEMINI_MODEL="gemini-3-flash-preview"
+  ```
+  
+  ```powershell
+  # Windows PowerShell
+  $env:GEMINI_MODEL="gemini-3-flash-preview"
+  ```
+</ParamField>
+
+## CLI Behavior
+
+<ParamField path="GEMINI_CLI_HOME" type="string">
+  Specifies the root directory for Gemini CLI's user-level configuration and storage
+  
+  By default, this is the user's system home directory. The CLI will create a `.gemini` folder inside this directory.
+  
+  Useful for shared compute environments or keeping CLI state isolated.
+  
+  ```bash
+  export GEMINI_CLI_HOME="/path/to/user/config"
+  ```
+  
+  ```powershell
+  # Windows PowerShell
+  $env:GEMINI_CLI_HOME="C:\path\to\user\config"
+  ```
+</ParamField>
+
+<ParamField path="GEMINI_CLI_IDE_PID" type="string">
+  Manually specifies the PID of the IDE process to use for integration
+  
+  Useful when running Gemini CLI in a standalone terminal while associating it with a specific IDE instance.
+  
+  ```bash
+  export GEMINI_CLI_IDE_PID="12345"
+  ```
+</ParamField>
+
+<ParamField path="NO_COLOR" type="any">
+  Set to any value to disable all color output in the CLI
+  
+  ```bash
+  export NO_COLOR=1
+  ```
+</ParamField>
+
+<ParamField path="CLI_TITLE" type="string">
+  Set to a string to customize the title of the CLI
+  
+  ```bash
+  export CLI_TITLE="My Custom Gemini"
+  ```
+</ParamField>
+
+<ParamField path="DEBUG" type="boolean">
+  Set to `true` or `1` to enable verbose debug logging
+  
+  ```bash
+  export DEBUG=1
+  gemini --debug  # Also open F12 for debug console
+  ```
+  
+  <Note>
+  This variable is automatically excluded from project `.env` files by default.
+  </Note>
+</ParamField>
+
+<ParamField path="DEBUG_MODE" type="boolean">
+  Alternative to `DEBUG` for enabling debug mode
+  
+  ```bash
+  export DEBUG_MODE=true
+  ```
+</ParamField>
+
+## Sandboxing
+
+<ParamField path="GEMINI_SANDBOX" type="boolean | string">
+  Alternative to the `sandbox` setting in `settings.json`
+  
+  **Options:** `true`, `false`, `docker`, `podman`, or a custom command string
+  
+  ```bash
+  export GEMINI_SANDBOX=docker
+  ```
+</ParamField>
+
+<ParamField path="BUILD_SANDBOX" type="boolean">
+  Automatically build the custom sandbox image from `.gemini/sandbox.Dockerfile`
+  
+  ```bash
+  BUILD_SANDBOX=1 gemini -s
+  ```
+</ParamField>
+
+<ParamField path="SEATBELT_PROFILE" type="string">
+  Switches the Seatbelt (`sandbox-exec`) profile on macOS
+  
+  **Options:**
+  - `permissive-open` (default) - Restricts writes to project folder but allows other operations
+  - `restrictive-open` - Declines operations by default, allows network
+  - `strict-open` - Restricts reads/writes to working directory, allows network
+  - `strict-proxied` - Same as `strict-open` but routes network through proxy
+  - `<profile_name>` - Uses custom profile from `.gemini/sandbox-macos-<profile_name>.sb`
+  
+  ```bash
+  export SEATBELT_PROFILE=strict-open
+  ```
+</ParamField>
+
+## System Prompts
+
+<ParamField path="GEMINI_SYSTEM_MD" type="boolean | string">
+  Replaces the built-in system prompt with content from a Markdown file
+  
+  **Options:**
+  - `true`/`1` - Use project default path `./.gemini/system.md`
+  - Any other string - Treat as a path (relative/absolute supported, `~` expands)
+  - `false`/`0` or unset - Use the built-in prompt
+  
+  ```bash
+  export GEMINI_SYSTEM_MD=true
+  # or
+  export GEMINI_SYSTEM_MD="/path/to/custom-system.md"
+  ```
+</ParamField>
+
+<ParamField path="GEMINI_WRITE_SYSTEM_MD" type="boolean | string">
+  Writes the current built-in system prompt to a file for review
+  
+  **Options:**
+  - `true`/`1` - Write to `./.gemini/system.md`
+  - Otherwise treat the value as a path
+  
+  Run the CLI once with this set to generate the file.
+  
+  ```bash
+  export GEMINI_WRITE_SYSTEM_MD=true
+  gemini
+  ```
+</ParamField>
+
+## Telemetry
+
+<ParamField path="GEMINI_TELEMETRY_ENABLED" type="boolean">
+  Set to `true` or `1` to enable telemetry
+  
+  Overrides the `telemetry.enabled` setting
+  
+  ```bash
+  export GEMINI_TELEMETRY_ENABLED=true
+  ```
+</ParamField>
+
+<ParamField path="GEMINI_TELEMETRY_TARGET" type="string">
+  Sets the telemetry target
+  
+  **Options:** `local`, `gcp`
+  
+  Overrides the `telemetry.target` setting
+  
+  ```bash
+  export GEMINI_TELEMETRY_TARGET=local
+  ```
+</ParamField>
+
+<ParamField path="GEMINI_TELEMETRY_OTLP_ENDPOINT" type="string">
+  Sets the OTLP endpoint for telemetry
+  
+  Overrides the `telemetry.otlpEndpoint` setting
+  
+  ```bash
+  export GEMINI_TELEMETRY_OTLP_ENDPOINT="http://localhost:4317"
+  ```
+</ParamField>
+
+<ParamField path="GEMINI_TELEMETRY_OTLP_PROTOCOL" type="string">
+  Sets the OTLP protocol
+  
+  **Options:** `grpc`, `http`
+  
+  Overrides the `telemetry.otlpProtocol` setting
+  
+  ```bash
+  export GEMINI_TELEMETRY_OTLP_PROTOCOL=grpc
+  ```
+</ParamField>
+
+<ParamField path="GEMINI_TELEMETRY_LOG_PROMPTS" type="boolean">
+  Set to `true` or `1` to enable logging of user prompts
+  
+  Overrides the `telemetry.logPrompts` setting
+  
+  ```bash
+  export GEMINI_TELEMETRY_LOG_PROMPTS=true
+  ```
+</ParamField>
+
+<ParamField path="GEMINI_TELEMETRY_OUTFILE" type="string">
+  Sets the file path to write telemetry to when target is `local`
+  
+  Overrides the `telemetry.outfile` setting
+  
+  ```bash
+  export GEMINI_TELEMETRY_OUTFILE="/path/to/telemetry.log"
+  ```
+</ParamField>
+
+<ParamField path="GEMINI_TELEMETRY_USE_COLLECTOR" type="boolean">
+  Set to `true` or `1` to enable using an external OTLP collector
+  
+  Overrides the `telemetry.useCollector` setting
+  
+  ```bash
+  export GEMINI_TELEMETRY_USE_COLLECTOR=true
+  ```
+</ParamField>
+
+<ParamField path="OTLP_GOOGLE_CLOUD_PROJECT" type="string">
+  Your Google Cloud Project ID for Telemetry in Google Cloud
+  
+  ```bash
+  export OTLP_GOOGLE_CLOUD_PROJECT="your-project-id"
+  ```
+</ParamField>
+
+## System Configuration
+
+<ParamField path="GEMINI_CLI_SYSTEM_DEFAULTS_PATH" type="string">
+  Override the path to the system defaults file
+  
+  **Default locations:**
+  - Linux: `/etc/gemini-cli/system-defaults.json`
+  - Windows: `C:\ProgramData\gemini-cli\system-defaults.json`
+  - macOS: `/Library/Application Support/GeminiCli/system-defaults.json`
+  
+  ```bash
+  export GEMINI_CLI_SYSTEM_DEFAULTS_PATH="/custom/path/system-defaults.json"
+  ```
+</ParamField>
+
+<ParamField path="GEMINI_CLI_SYSTEM_SETTINGS_PATH" type="string">
+  Override the path to the system settings file
+  
+  **Default locations:**
+  - Linux: `/etc/gemini-cli/settings.json`
+  - Windows: `C:\ProgramData\gemini-cli\settings.json`
+  - macOS: `/Library/Application Support/GeminiCli/settings.json`
+  
+  ```bash
+  export GEMINI_CLI_SYSTEM_SETTINGS_PATH="/custom/path/settings.json"
+  ```
+</ParamField>
+
+<ParamField path="CODE_ASSIST_ENDPOINT" type="string">
+  Specifies the endpoint for the code assist server
+  
+  Useful for development and testing
+  
+  ```bash
+  export CODE_ASSIST_ENDPOINT="https://custom-endpoint.example.com"
+  ```
+</ParamField>
+
+## Environment Variable Redaction
+
+To prevent accidental leakage of sensitive information, Gemini CLI automatically redacts potential secrets from environment variables when executing tools.
+
+### Default Redaction Rules
+
+<AccordionGroup>
+  <Accordion title="By Name">
+    Variables are redacted if their names contain:
+    - `TOKEN`
+    - `SECRET`
+    - `PASSWORD`
+    - `KEY`
+    - `AUTH`
+    - `CREDENTIAL`
+    - `PRIVATE`
+    - `CERT`
+  </Accordion>
+  
+  <Accordion title="By Value Pattern">
+    Variables are redacted if their values match:
+    - Private keys (RSA, OpenSSH, PGP, etc.)
+    - Certificates
+    - URLs containing credentials
+    - API keys and tokens (GitHub, Google, AWS, Stripe, Slack, etc.)
+  </Accordion>
+  
+  <Accordion title="Specific Blocklist">
+    These variables are always redacted by default:
+    - `CLIENT_ID`
+    - `DB_URI`
+    - `DATABASE_URL`
+    - `CONNECTION_STRING`
+  </Accordion>
+</AccordionGroup>
+
+### Never Redacted (Allowlist)
+
+- Common system variables: `PATH`, `HOME`, `USER`, `SHELL`, `TERM`, `LANG`
+- Variables starting with `GEMINI_CLI_`
+- GitHub Action specific variables
+
+### Custom Redaction Configuration
+
+Configure redaction behavior in your `settings.json`:
+
+```json
+{
+  "security": {
+    "environmentVariableRedaction": {
+      "enabled": true,
+      "allowed": ["MY_PUBLIC_KEY", "NOT_A_SECRET_TOKEN"],
+      "blocked": ["INTERNAL_IP_ADDRESS", "CUSTOM_SENSITIVE_VAR"]
+    }
+  }
+}
+```
+
+<ParamField path="security.environmentVariableRedaction.enabled" type="boolean" default="false">
+  Enable redaction of environment variables that may contain secrets
+</ParamField>
+
+<ParamField path="security.environmentVariableRedaction.allowed" type="array" default="[]">
+  Environment variables to always allow (bypass redaction)
+</ParamField>
+
+<ParamField path="security.environmentVariableRedaction.blocked" type="array" default="[]">
+  Environment variables to always redact
+</ParamField>
+
+## Example Configurations
+
+### Basic Setup with API Key
+
+```bash
+# ~/.bashrc or ~/.zshrc
+export GEMINI_API_KEY="your-api-key-here"
+export GEMINI_MODEL="gemini-2.5-flash"
+```
+
+### Vertex AI Configuration
+
+```bash
+# Project .env file
+GOOGLE_API_KEY="your-google-api-key"
+GOOGLE_CLOUD_PROJECT="my-project-id"
+GOOGLE_CLOUD_LOCATION="us-central1"
+GOOGLE_GENAI_USE_VERTEXAI=true
+```
+
+### Development Setup with Debug
+
+```bash
+# .gemini/.env (not excluded like project .env)
+DEBUG=1
+DEBUG_MODE=true
+GEMINI_TELEMETRY_ENABLED=true
+GEMINI_TELEMETRY_TARGET=local
+GEMINI_TELEMETRY_OUTFILE="./telemetry.log"
+```
+
+### Sandboxed Environment
+
+```bash
+export GEMINI_SANDBOX=docker
+export BUILD_SANDBOX=1
+export SEATBELT_PROFILE=strict-open  # macOS only
+```
+
+### Custom Home Directory (Shared Computing)
+
+```bash
+export GEMINI_CLI_HOME="/workspace/users/$USER/.gemini-config"
+export GEMINI_MODEL="gemini-3-flash-preview"
+```
+
+## Shell Profile Examples
+
+### Bash (~/.bashrc)
+
+```bash
+# Gemini CLI Configuration
+export GEMINI_API_KEY="your-api-key"
+export GEMINI_MODEL="gemini-2.5-pro"
+export GEMINI_CLI_HOME="$HOME/.config/gemini"
+
+# Optional: Add alias for quick access
+alias gm="gemini"
+alias gms="gemini --sandbox"
+```
+
+### Zsh (~/.zshrc)
+
+```zsh
+# Gemini CLI Configuration
+export GEMINI_API_KEY="your-api-key"
+export GEMINI_MODEL="gemini-2.5-flash"
+
+# Load project-specific .env if available
+if [[ -f .env ]]; then
+  export $(cat .env | xargs)
+fi
+```
+
+### PowerShell (Windows)
+
+```powershell
+# Microsoft.PowerShell_profile.ps1
+$env:GEMINI_API_KEY="your-api-key"
+$env:GEMINI_MODEL="gemini-2.5-pro"
+$env:GEMINI_CLI_HOME="$HOME\.config\gemini"
+
+# Optional: Add alias
+Set-Alias gm gemini
+```
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Settings Reference" icon="gear" href="/reference/settings">
+    Configure Gemini CLI with settings.json
+  </Card>
+  <Card title="Authentication" icon="key" href="/get-started/authentication">
+    Complete authentication setup guide
+  </Card>
+  <Card title="Sandboxing" icon="shield" href="/cli/sandbox">
+    Safe execution environments
+  </Card>
+  <Card title="Telemetry" icon="chart-line" href="/cli/telemetry">
+    Usage tracking and monitoring
+  </Card>
+</CardGroup>

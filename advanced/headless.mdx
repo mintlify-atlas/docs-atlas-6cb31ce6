@@ -1,0 +1,158 @@
+---
+title: Headless Mode
+description: Use Gemini CLI programmatically with structured JSON output for automation and scripting
+---
+
+Headless mode provides a programmatic interface to Gemini CLI, returning structured text or JSON output without an interactive terminal UI.
+
+## Technical Reference
+
+Headless mode is triggered when the CLI is run in a non-TTY environment or when providing a query as a positional argument without the interactive flag.
+
+## Output Formats
+
+You can specify the output format using the `--output-format` flag.
+
+### JSON Output
+
+Returns a single JSON object containing the response and usage statistics.
+
+**Schema:**
+
+<ResponseField name="response" type="string">
+  The model's final answer.
+</ResponseField>
+
+<ResponseField name="stats" type="object">
+  Token usage and API latency metrics.
+</ResponseField>
+
+<ResponseField name="error" type="object">
+  Error details if the request failed (optional).
+</ResponseField>
+
+**Example usage:**
+
+```bash
+gemini "What is the capital of France?" --output-format json
+```
+
+**Example output:**
+
+```json
+{
+  "response": "The capital of France is Paris.",
+  "stats": {
+    "inputTokens": 12,
+    "outputTokens": 8,
+    "totalTokens": 20,
+    "apiLatencyMs": 234
+  }
+}
+```
+
+### Streaming JSON Output
+
+Returns a stream of newline-delimited JSON (JSONL) events.
+
+**Event types:**
+
+<ResponseField name="init" type="object">
+  Session metadata (session ID, model).
+</ResponseField>
+
+<ResponseField name="message" type="object">
+  User and assistant message chunks.
+</ResponseField>
+
+<ResponseField name="tool_use" type="object">
+  Tool call requests with arguments.
+</ResponseField>
+
+<ResponseField name="tool_result" type="object">
+  Output from executed tools.
+</ResponseField>
+
+<ResponseField name="error" type="object">
+  Non-fatal warnings and system errors.
+</ResponseField>
+
+<ResponseField name="result" type="object">
+  Final outcome with aggregated statistics.
+</ResponseField>
+
+**Example usage:**
+
+```bash
+gemini "List files in current directory" --output-format json-stream
+```
+
+**Example output:**
+
+```json
+{"type":"init","sessionId":"abc123","model":"gemini-2.0-flash-exp"}
+{"type":"message","role":"assistant","content":"I'll list the files"}
+{"type":"tool_use","name":"bash","args":{"command":"ls"}}
+{"type":"tool_result","output":"file1.txt\nfile2.txt"}
+{"type":"message","role":"assistant","content":"Found 2 files"}
+{"type":"result","stats":{"totalTokens":150}}
+```
+
+## Exit Codes
+
+The CLI returns standard exit codes to indicate the result of the headless execution:
+
+<ResponseField name="0" type="exit code">
+  Success.
+</ResponseField>
+
+<ResponseField name="1" type="exit code">
+  General error or API failure.
+</ResponseField>
+
+<ResponseField name="42" type="exit code">
+  Input error (invalid prompt or arguments).
+</ResponseField>
+
+<ResponseField name="53" type="exit code">
+  Turn limit exceeded.
+</ResponseField>
+
+**Example usage in scripts:**
+
+```bash
+#!/bin/bash
+
+gemini "Analyze this code" --output-format json > output.json
+
+if [ $? -eq 0 ]; then
+  echo "Success!"
+  cat output.json | jq '.response'
+else
+  echo "Failed with exit code: $?"
+  exit 1
+fi
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="CI/CD Integration" icon="gears">
+    Automate code reviews, changelog generation, or test creation in your CI pipeline.
+  </Card>
+  <Card title="Batch Processing" icon="list">
+    Process multiple files or inputs in a loop for consistent analysis or transformation.
+  </Card>
+  <Card title="API Wrapper" icon="code">
+    Build custom APIs or services on top of Gemini CLI capabilities.
+  </Card>
+  <Card title="Monitoring & Alerts" icon="bell">
+    Generate reports or summaries from logs and system data.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<Card title="CLI Reference" icon="terminal" href="/cli-reference">
+  See all available flags and options for headless mode
+</Card>

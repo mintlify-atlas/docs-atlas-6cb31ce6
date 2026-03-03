@@ -1,0 +1,799 @@
+---
+title: Hooks System Reference
+description: Complete API reference for Gemini CLI hooks with type signatures and event schemas
+---
+
+## Overview
+
+Hooks are scripts or programs that execute at specific points in the Gemini CLI lifecycle, allowing you to intercept and customize behavior without modifying the CLI source code.
+
+Hooks run synchronously—when a hook event fires, Gemini CLI waits for all matching hooks to complete before continuing.
+
+## Hook Events
+
+Hooks are triggered by specific lifecycle events.
+
+### SessionStart
+
+**When:** Session begins (startup, resume, or clear)
+
+**Use Cases:** Initialize resources, load context, set up environment
+
+**Input Schema:**
+
+<ParamField path="session_id" type="string" required>
+  Unique identifier for the session
+</ParamField>
+
+<ParamField path="transcript_path" type="string" required>
+  Path to the conversation transcript file
+</ParamField>
+
+<ParamField path="cwd" type="string" required>
+  Current working directory
+</ParamField>
+
+<ParamField path="hook_event_name" type="string" required>
+  Event name: `"SessionStart"`
+</ParamField>
+
+<ParamField path="timestamp" type="string" required>
+  ISO 8601 timestamp
+</ParamField>
+
+<ParamField path="trigger" type="string">
+  Session start trigger: `"startup"`, `"resume"`, or `"clear"`
+</ParamField>
+
+**Output Schema:**
+
+<ResponseField name="continue" type="boolean">
+  If `false`, stops execution with error message from `stopReason`
+</ResponseField>
+
+<ResponseField name="stopReason" type="string">
+  Error message shown if `continue` is `false`
+</ResponseField>
+
+<ResponseField name="systemMessage" type="string">
+  Advisory message displayed to user
+</ResponseField>
+
+### SessionEnd
+
+**When:** Session ends (exit or clear)
+
+**Use Cases:** Clean up resources, save state, log summary
+
+**Input Schema:** Same base fields as SessionStart, plus:
+
+<ParamField path="trigger" type="string">
+  Session end trigger: `"exit"` or `"clear"`
+</ParamField>
+
+**Output Schema:** Advisory only (same as SessionStart)
+
+### BeforeAgent
+
+**When:** After user submits prompt, before agent planning begins
+
+**Use Cases:** Add context, validate prompts, block turns
+
+**Input Schema:**
+
+<ParamField path="user_message" type="string" required>
+  The user's prompt text
+</ParamField>
+
+<ParamField path="conversation_history" type="array">
+  Array of conversation turns (formatted for LLM)
+</ParamField>
+
+**Output Schema:**
+
+<ResponseField name="continue" type="boolean">
+  If `false`, blocks the turn
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.additionalContext" type="string">
+  Context to inject into the model's prompt (sanitized for safety)
+</ResponseField>
+
+<ResponseField name="systemMessage" type="string">
+  Message displayed to the user
+</ResponseField>
+
+### AfterAgent
+
+**When:** When agent loop completes
+
+**Use Cases:** Review output, force retry, halt execution
+
+**Input Schema:**
+
+<ParamField path="final_response" type="string">
+  The agent's final response text
+</ParamField>
+
+**Output Schema:**
+
+<ResponseField name="continue" type="boolean">
+  If `false`, halts execution
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.retry" type="boolean">
+  If `true`, forces the agent to retry
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.retryReason" type="string">
+  Reason for retry (added to context)
+</ResponseField>
+
+<ResponseField name="systemMessage" type="string">
+  Advisory message
+</ResponseField>
+
+### BeforeModel
+
+**When:** Before sending request to LLM
+
+**Use Cases:** Modify prompts, swap models, mock responses
+
+**Input Schema:**
+
+<ParamField path="llm_request" type="object" required>
+  LLM request parameters
+  
+  <ParamField path="llm_request.contents" type="array">
+    Conversation contents
+  </ParamField>
+  
+  <ParamField path="llm_request.model" type="string">
+    Model identifier
+  </ParamField>
+  
+  <ParamField path="llm_request.generationConfig" type="object">
+    Generation parameters (temperature, topP, etc.)
+  </ParamField>
+  
+  <ParamField path="llm_request.systemInstruction" type="object">
+    System instructions
+  </ParamField>
+</ParamField>
+
+**Output Schema:**
+
+<ResponseField name="continue" type="boolean">
+  If `false`, blocks the LLM request
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.llm_request" type="object">
+  Modified LLM request (replaces original if provided)
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.llm_response" type="object">
+  Mock LLM response (skips actual LLM call if provided)
+</ResponseField>
+
+### AfterModel
+
+**When:** After receiving LLM response
+
+**Use Cases:** Filter/redact responses, log interactions
+
+**Input Schema:**
+
+<ParamField path="llm_request" type="object" required>
+  The request that was sent
+</ParamField>
+
+<ParamField path="llm_response" type="object" required>
+  The LLM's response
+  
+  <ParamField path="llm_response.candidates" type="array">
+    Response candidates
+  </ParamField>
+  
+  <ParamField path="llm_response.usageMetadata" type="object">
+    Token usage statistics
+  </ParamField>
+</ParamField>
+
+**Output Schema:**
+
+<ResponseField name="continue" type="boolean">
+  If `false`, blocks the response
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.llm_response" type="object">
+  Modified response (replaces original if provided)
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.redacted" type="boolean">
+  If `true`, indicates content was redacted
+</ResponseField>
+
+### BeforeToolSelection
+
+**When:** Before LLM selects tools
+
+**Use Cases:** Filter available tools, optimize selection
+
+**Input Schema:**
+
+<ParamField path="available_tools" type="array" required>
+  Array of tool declarations
+</ParamField>
+
+<ParamField path="tool_config" type="object">
+  Tool configuration (mode, allowed functions)
+</ParamField>
+
+**Output Schema:**
+
+<ResponseField name="hookSpecificOutput.tool_config" type="object">
+  Modified tool configuration
+  
+  <ParamField path="tool_config.mode" type="string">
+    Tool mode: `"AUTO"`, `"ANY"`, or `"NONE"`
+  </ParamField>
+  
+  <ParamField path="tool_config.allowed_function_names" type="string[]">
+    Whitelist of allowed tool names
+  </ParamField>
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.tools" type="array">
+  Modified tools list (filters available tools)
+</ResponseField>
+
+### BeforeTool
+
+**When:** Before a tool executes
+
+**Use Cases:** Validate arguments, block dangerous operations
+
+**Matcher:** Regular expression matching tool names (e.g., `"write_.*"`, `"shell_tool"`)
+
+**Input Schema:**
+
+<ParamField path="tool_name" type="string" required>
+  Name of the tool being called
+</ParamField>
+
+<ParamField path="tool_args" type="object" required>
+  Tool arguments as key-value pairs
+</ParamField>
+
+<ParamField path="tool_description" type="string">
+  Human-readable description of what the tool will do
+</ParamField>
+
+**Output Schema:**
+
+<ResponseField name="decision" type="string">
+  Tool execution decision:
+  - `"allow"` or `"approve"` - Proceed without confirmation
+  - `"ask"` - Request user confirmation
+  - `"block"` or `"deny"` - Block execution
+</ResponseField>
+
+<ResponseField name="reason" type="string">
+  Reason for the decision (shown to user)
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.tool_args" type="object">
+  Modified tool arguments (replaces original if provided)
+</ResponseField>
+
+### AfterTool
+
+**When:** After a tool executes
+
+**Use Cases:** Process results, run tests, hide sensitive output
+
+**Matcher:** Regular expression matching tool names
+
+**Input Schema:**
+
+<ParamField path="tool_name" type="string" required>
+  Name of the tool that executed
+</ParamField>
+
+<ParamField path="tool_args" type="object" required>
+  Arguments that were passed
+</ParamField>
+
+<ParamField path="tool_result" type="object" required>
+  Tool execution result
+  
+  <ParamField path="tool_result.llmContent" type="string">
+    Content sent to LLM
+  </ParamField>
+  
+  <ParamField path="tool_result.returnDisplay" type="string">
+    Content displayed to user
+  </ParamField>
+  
+  <ParamField path="tool_result.error" type="object">
+    Error details if tool failed
+  </ParamField>
+</ParamField>
+
+**Output Schema:**
+
+<ResponseField name="decision" type="string">
+  Result handling decision:
+  - `"allow"` - Use the result as-is
+  - `"block"` - Hide result from LLM and user
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.tool_result" type="object">
+  Modified tool result (replaces original if provided)
+</ResponseField>
+
+<ResponseField name="hookSpecificOutput.additionalContext" type="string">
+  Additional context to inject after the tool result
+</ResponseField>
+
+<ResponseField name="suppressOutput" type="boolean">
+  If `true`, hides output from user (but sends to LLM)
+</ResponseField>
+
+### PreCompress
+
+**When:** Before context compression
+
+**Use Cases:** Save state, notify user
+
+**Input Schema:**
+
+<ParamField path="context_size" type="number">
+  Current context size in tokens
+</ParamField>
+
+<ParamField path="max_context_size" type="number">
+  Maximum context size
+</ParamField>
+
+**Output Schema:** Advisory only
+
+### Notification
+
+**When:** System notification occurs
+
+**Use Cases:** Forward to desktop alerts, logging
+
+**Matcher:** Exact string matching notification types (e.g., `"error"`, `"warning"`, `"info"`)
+
+**Input Schema:**
+
+<ParamField path="notification_type" type="string" required>
+  Notification category
+</ParamField>
+
+<ParamField path="message" type="string" required>
+  Notification message
+</ParamField>
+
+<ParamField path="details" type="object">
+  Additional notification details
+</ParamField>
+
+**Output Schema:** Advisory only
+
+## Hook Configuration
+
+### HookConfig
+
+Defines a single hook implementation.
+
+#### Command Hook
+
+```typescript
+interface CommandHookConfig {
+  type: 'command';
+  command: string;
+  name?: string;
+  description?: string;
+  timeout?: number;  // milliseconds (default: 60000)
+  source?: ConfigSource;
+  env?: Record<string, string>;
+}
+```
+
+<ParamField path="type" type="'command'" required>
+  Hook type (command-based hook)
+</ParamField>
+
+<ParamField path="command" type="string" required>
+  Shell command to execute. Use `$GEMINI_PROJECT_DIR` and other environment variables.
+</ParamField>
+
+<ParamField path="name" type="string">
+  Friendly name for logs and CLI commands
+</ParamField>
+
+<ParamField path="description" type="string">
+  Brief explanation of the hook's purpose
+</ParamField>
+
+<ParamField path="timeout" type="number">
+  Execution timeout in milliseconds (default: 60000)
+</ParamField>
+
+<ParamField path="env" type="Record<string, string>">
+  Additional environment variables
+</ParamField>
+
+#### Runtime Hook
+
+```typescript
+interface RuntimeHookConfig {
+  type: 'runtime';
+  name: string;
+  action: HookAction;
+  timeout?: number;
+  source?: ConfigSource;
+}
+
+type HookAction = (
+  input: HookInput,
+  options?: { signal: AbortSignal }
+) => Promise<HookOutput | void | null>;
+```
+
+<ParamField path="type" type="'runtime'" required>
+  Hook type (programmatic hook)
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Unique identifier for the runtime hook
+</ParamField>
+
+<ParamField path="action" type="HookAction" required>
+  Function to execute when hook is triggered
+</ParamField>
+
+### HookDefinition
+
+Groups hooks by matcher and execution strategy.
+
+```typescript
+interface HookDefinition {
+  matcher?: string;
+  sequential?: boolean;
+  hooks: HookConfig[];
+}
+```
+
+<ParamField path="matcher" type="string">
+  Filter pattern:
+  - Tool events: Regular expression (e.g., `"write_.*"`, `"shell_.*"`)
+  - Lifecycle events: Exact string (e.g., `"startup"`, `"error"`)
+  - Wildcard: `"*"` or empty string matches all
+</ParamField>
+
+<ParamField path="sequential" type="boolean">
+  If `true`, hooks run sequentially. If `false` (default), hooks run in parallel.
+</ParamField>
+
+<ParamField path="hooks" type="HookConfig[]" required>
+  Array of hook configurations to execute
+</ParamField>
+
+### Configuration Example
+
+```json
+{
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "write_file|edit_file",
+        "sequential": false,
+        "hooks": [
+          {
+            "name": "security-scan",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/security.sh",
+            "timeout": 5000,
+            "description": "Scan for security issues"
+          },
+          {
+            "name": "format-check",
+            "type": "command",
+            "command": "prettier --check",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "name": "audit-log",
+            "type": "command",
+            "command": "./log-tool-usage.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "name": "load-context",
+            "type": "command",
+            "command": "./load-project-context.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Exit Codes
+
+Gemini CLI uses exit codes to determine hook execution outcomes:
+
+<ParamField path="0" type="Success">
+  **Preferred code for all logic.** The `stdout` is parsed as JSON. Use this even for intentional blocks (set `{"decision": "deny"}` in output).
+</ParamField>
+
+<ParamField path="2" type="System Block">
+  **Critical block.** The target action (tool, turn, or stop) is aborted. `stderr` is used as the rejection reason. High severity for security stops or script failures.
+</ParamField>
+
+<ParamField path="Other" type="Warning">
+  Non-fatal failure. A warning is shown, but execution proceeds using original parameters.
+</ParamField>
+
+## Environment Variables
+
+Hooks execute with these environment variables:
+
+<ParamField path="GEMINI_PROJECT_DIR" type="string">
+  Absolute path to the project root
+</ParamField>
+
+<ParamField path="GEMINI_SESSION_ID" type="string">
+  Unique ID for the current session
+</ParamField>
+
+<ParamField path="GEMINI_CWD" type="string">
+  Current working directory
+</ParamField>
+
+<ParamField path="CLAUDE_PROJECT_DIR" type="string">
+  Alias for `GEMINI_PROJECT_DIR` (compatibility)
+</ParamField>
+
+## JSON Communication
+
+### The Golden Rule
+
+**Your hook script MUST NOT print any text to `stdout` except the final JSON object.**
+
+```bash
+#!/bin/bash
+
+# WRONG - breaks JSON parsing
+echo "Processing..."  # This goes to stdout!
+
+# CORRECT - debug via stderr
+echo "Processing..." >&2
+
+# CORRECT - final JSON output
+echo '{"decision": "allow"}'
+```
+
+### Input (stdin)
+
+JSON object with event-specific fields:
+
+```json
+{
+  "session_id": "abc123",
+  "transcript_path": "/path/to/transcript.json",
+  "cwd": "/workspace",
+  "hook_event_name": "BeforeTool",
+  "timestamp": "2026-03-03T10:30:00Z",
+  "tool_name": "write_file",
+  "tool_args": {
+    "path": "src/index.ts",
+    "content": "console.log('hello');"
+  }
+}
+```
+
+### Output (stdout)
+
+JSON object with decision and context:
+
+```json
+{
+  "decision": "allow",
+  "reason": "File path is in allowed directory",
+  "systemMessage": "Security check passed",
+  "hookSpecificOutput": {
+    "additionalContext": "Validated against security policy v2.1"
+  }
+}
+```
+
+## Hook Examples
+
+### Block Dangerous Commands
+
+```bash
+#!/bin/bash
+# hooks/block-dangerous.sh
+
+input=$(cat)
+command=$(echo "$input" | jq -r '.tool_args.command // ""')
+
+if [[ "$command" =~ rm.*-rf ]]; then
+  echo '{"decision": "deny", "reason": "Dangerous rm -rf command blocked"}'
+  exit 0
+fi
+
+echo '{"decision": "allow"}'
+```
+
+### Inject Git Context
+
+```bash
+#!/bin/bash
+# hooks/git-context.sh
+
+git_status=$(git status --short 2>&1)
+git_branch=$(git branch --show-current 2>&1)
+
+context="Current branch: $git_branch\n\nGit status:\n$git_status"
+
+cat <<EOF
+{
+  "systemMessage": "Injected git context",
+  "hookSpecificOutput": {
+    "additionalContext": $(echo "$context" | jq -Rs .)
+  }
+}
+EOF
+```
+
+### Validate File Paths
+
+```bash
+#!/bin/bash
+# hooks/validate-paths.sh
+
+input=$(cat)
+path=$(echo "$input" | jq -r '.tool_args.path // .tool_args.filePath // ""')
+
+# Block writes outside src/ directory
+if [[ "$path" != src/* ]] && [[ "$path" != "" ]]; then
+  echo '{"decision": "deny", "reason": "File writes only allowed in src/ directory"}'
+  exit 0
+fi
+
+echo '{"decision": "allow"}'
+```
+
+### Run Tests After Tool
+
+```bash
+#!/bin/bash
+# hooks/auto-test.sh
+
+input=$(cat)
+tool_name=$(echo "$input" | jq -r '.tool_name')
+
+# Run tests after file edits
+if [[ "$tool_name" == "write_file" ]] || [[ "$tool_name" == "edit_file" ]]; then
+  test_output=$(npm test 2>&1)
+  test_exit=$?
+  
+  if [[ $test_exit -ne 0 ]]; then
+    cat <<EOF
+{
+  "systemMessage": "Tests failed after file modification",
+  "hookSpecificOutput": {
+    "additionalContext": "Test failures:\n$(echo "$test_output" | jq -Rs .)"
+  }
+}
+EOF
+  else
+    echo '{"systemMessage": "Tests passed"}'
+  fi
+fi
+
+echo '{}'
+```
+
+### Mock LLM Response
+
+```bash
+#!/bin/bash
+# hooks/mock-response.sh
+
+cat <<'EOF'
+{
+  "hookSpecificOutput": {
+    "llm_response": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "This is a mocked response for testing."
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ]
+    }
+  }
+}
+EOF
+```
+
+## Managing Hooks
+
+Use CLI commands to manage hooks:
+
+```bash
+# View all hooks
+/hooks panel
+
+# Enable/disable all
+/hooks enable-all
+/hooks disable-all
+
+# Toggle individual hooks
+/hooks enable security-check
+/hooks disable audit-log
+```
+
+## Security Considerations
+
+<Warning>
+**Hooks execute arbitrary code with your user privileges.** Project-level hooks are particularly risky when opening untrusted projects.
+</Warning>
+
+### Hook Trust System
+
+Gemini CLI fingerprints project hooks. If a hook's name or command changes (e.g., via `git pull`), it's treated as a **new, untrusted hook** and you'll be warned before it executes.
+
+### Best Practices
+
+1. **Review project hooks** before trusting them
+2. **Use user-level hooks** for personal automation
+3. **Validate all inputs** in hook scripts
+4. **Log hook activity** for auditing
+5. **Set appropriate timeouts** to prevent hangs
+6. **Use stderr for debugging** to avoid breaking JSON output
+7. **Test hooks thoroughly** before deploying to teams
+
+## Configuration Sources
+
+Hooks are merged from multiple layers in precedence order (highest to lowest):
+
+1. **Project settings** - `.gemini/settings.json` in current directory
+2. **User settings** - `~/.gemini/settings.json`
+3. **System settings** - `/etc/gemini-cli/settings.json`
+4. **Extensions** - Hooks from installed extensions
+
+```typescript
+enum ConfigSource {
+  Runtime = 'runtime',    // Highest priority
+  Project = 'project',
+  User = 'user',
+  System = 'system',
+  Extensions = 'extensions' // Lowest priority
+}
+```

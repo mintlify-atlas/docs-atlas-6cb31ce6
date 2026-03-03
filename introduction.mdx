@@ -1,0 +1,213 @@
+---
+title: Introduction
+description: Welcome to Gemini CLI - an open-source AI agent that brings the power of Gemini directly into your terminal
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.svg"
+  alt="Gemini CLI Hero Light"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.svg"
+  alt="Gemini CLI Hero Dark"
+/>
+
+## Welcome to Gemini CLI
+
+Gemini CLI is an open-source AI agent that brings the power of Gemini directly into your terminal. It provides lightweight access to Gemini, giving you the most direct path from your prompt to our model.
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get up and running with Gemini CLI in minutes
+  </Card>
+  <Card
+    title="Installation"
+    icon="download"
+    href="/installation"
+  >
+    Install Gemini CLI using npm, Homebrew, or other methods
+  </Card>
+  <Card
+    title="Authentication"
+    icon="lock"
+    href="/authentication"
+  >
+    Set up OAuth, API key, or Vertex AI authentication
+  </Card>
+  <Card
+    title="Commands Reference"
+    icon="terminal"
+    href="/reference/commands"
+  >
+    Explore all available commands and features
+  </Card>
+</CardGroup>
+
+## Why Gemini CLI?
+
+Gemini CLI is designed for developers who live in the command line and want powerful AI capabilities at their fingertips.
+
+<CardGroup cols={3}>
+  <Card title="Free Tier" icon="gift">
+    60 requests/min and 1,000 requests/day with personal Google account
+  </Card>
+  <Card title="Powerful Models" icon="brain">
+    Access to Gemini 3 models with improved reasoning and 1M token context window
+  </Card>
+  <Card title="Built-in Tools" icon="wrench">
+    Google Search grounding, file operations, shell commands, and web fetching
+  </Card>
+  <Card title="Extensible" icon="plug">
+    MCP (Model Context Protocol) support for custom integrations
+  </Card>
+  <Card title="Terminal-First" icon="code">
+    Designed for developers who live in the command line
+  </Card>
+  <Card title="Open Source" icon="github">
+    Apache 2.0 licensed and community-driven
+  </Card>
+</CardGroup>
+
+## Key Features
+
+### Code Understanding & Generation
+
+- Query and edit large codebases with intelligent context awareness
+- Generate new apps from PDFs, images, or sketches using multimodal capabilities
+- Debug issues and troubleshoot with natural language
+
+### Automation & Integration
+
+- Automate operational tasks like querying pull requests or handling complex rebases
+- Use MCP servers to connect new capabilities, including media generation with Imagen, Veo or Lyria
+- Run non-interactively in scripts for workflow automation
+
+### Advanced Capabilities
+
+- Ground your queries with built-in Google Search for real-time information
+- Conversation checkpointing to save and resume complex sessions
+- Custom context files (GEMINI.md) to tailor behavior for your projects
+
+## Quick Example
+
+Get started with Gemini CLI in seconds:
+
+```bash
+# Install globally
+npm install -g @google/gemini-cli
+
+# Start Gemini CLI
+gemini
+
+# Or run instantly without installation
+npx @google/gemini-cli
+```
+
+<Info>
+  **New to Gemini CLI?** Check out our [Quick Start Guide](/quickstart) to get up and running in minutes.
+</Info>
+
+## Authentication Options
+
+Choose the authentication method that best fits your needs:
+
+<CardGroup cols={3}>
+  <Card title="Login with Google" icon="google">
+    **Best for:** Individual developers
+    
+    Free tier with 60 requests/min and 1,000 requests/day. No API key management required.
+  </Card>
+  <Card title="Gemini API Key" icon="key">
+    **Best for:** Specific model control
+    
+    1000 requests/day with Gemini 3. Choose specific models and upgrade for higher limits.
+  </Card>
+  <Card title="Vertex AI" icon="cloud">
+    **Best for:** Enterprise teams
+    
+    Advanced security, compliance, and scalable rate limits with billing account.
+  </Card>
+</CardGroup>
+
+<Note>
+  Learn more about authentication options in our [Authentication Guide](/authentication).
+</Note>
+
+## What You Can Build
+
+<Tabs>
+  <Tab title="Code Analysis">
+    ```bash
+    # Analyze a repository
+    cd my-project
+    gemini
+    > Give me a summary of all of the changes that went in yesterday
+    ```
+  </Tab>
+  <Tab title="New Projects">
+    ```bash
+    # Start a new project
+    cd new-project/
+    gemini
+    > Write me a Discord bot that answers questions using a FAQ.md file
+    ```
+  </Tab>
+  <Tab title="Automation">
+    ```bash
+    # Non-interactive mode for scripts
+    gemini -p "Explain the architecture of this codebase" --output-format json
+    ```
+  </Tab>
+</Tabs>
+
+## Community & Support
+
+Gemini CLI is fully open source (Apache 2.0), and we encourage the community to:
+
+- Report bugs and suggest features on [GitHub Issues](https://github.com/google-gemini/gemini-cli/issues)
+- Improve documentation and submit code improvements
+- Share your MCP servers and extensions
+- Join discussions and get help from the community
+
+<Tip>
+  Use the `/bug` command directly from the CLI to report issues.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Install Gemini CLI"
+    icon="download"
+    href="/installation"
+  >
+    Choose from npm, Homebrew, MacPorts, or Anaconda installation methods
+  </Card>
+  <Card
+    title="Set Up Authentication"
+    icon="shield-check"
+    href="/authentication"
+  >
+    Configure OAuth, API key, or Vertex AI authentication
+  </Card>
+  <Card
+    title="Quick Start Guide"
+    icon="bolt"
+    href="/quickstart"
+  >
+    Get to your first working command in minutes
+  </Card>
+  <Card
+    title="View Examples"
+    icon="lightbulb"
+    href="/examples"
+  >
+    See real-world examples of what you can build
+  </Card>
+</CardGroup>

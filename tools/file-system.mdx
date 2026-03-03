@@ -1,0 +1,216 @@
+---
+title: File System Tools
+description: Read, write, search, and modify files using built-in file system tools
+icon: folder
+---
+
+The Gemini CLI provides a comprehensive suite of tools for interacting with the local file system. These tools enable the model to explore and modify your codebase efficiently and securely.
+
+## Overview
+
+All file system tools operate within a `rootDirectory` (the current working directory or workspace root) for security. The CLI automatically respects `.gitignore` and `.geminiignore` files to avoid exposing irrelevant or sensitive files.
+
+## Available Tools
+
+### `list_directory` (ReadFolder)
+
+Lists the names of files and subdirectories directly within a specified path.
+
+<ParamField path="dir_path" type="string" required>
+  Absolute or relative path to the directory
+</ParamField>
+
+<ParamField path="ignore" type="array">
+  Glob patterns to exclude from listing
+</ParamField>
+
+<ParamField path="file_filtering_options" type="object">
+  Configuration for `.gitignore` and `.geminiignore` compliance
+</ParamField>
+
+<Info>
+This tool only lists direct children of the specified directory. Use `glob` for recursive file discovery.
+</Info>
+
+### `read_file` (ReadFile)
+
+Reads and returns the content of a specific file. Supports text, images, audio, and PDF.
+
+<ParamField path="file_path" type="string" required>
+  Path to the file to read
+</ParamField>
+
+<ParamField path="offset" type="number">
+  Start line for text files (0-based)
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of lines to read
+</ParamField>
+
+**Example:**
+
+```typescript
+// Read entire file
+read_file({ file_path: "src/index.ts" })
+
+// Read specific section
+read_file({ file_path: "src/index.ts", offset: 10, limit: 20 })
+```
+
+### `write_file` (WriteFile)
+
+Writes content to a specified file, overwriting it if it exists or creating it if not.
+
+<ParamField path="file_path" type="string" required>
+  Path to the file to write
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  Data to write to the file
+</ParamField>
+
+<Warning>
+This tool requires manual user approval before execution to prevent unintended data loss.
+</Warning>
+
+### `glob` (FindFiles)
+
+Finds files matching specific glob patterns across the workspace.
+
+<ParamField path="pattern" type="string" required>
+  The glob pattern to match (e.g., `"*.py"`, `"src/**/*.js"`)
+</ParamField>
+
+<ParamField path="path" type="string">
+  Absolute path to the directory to search within. Defaults to root directory.
+</ParamField>
+
+<ParamField path="case_sensitive" type="boolean" default="false">
+  Whether the search should be case-sensitive
+</ParamField>
+
+<ParamField path="respect_git_ignore" type="boolean" default="true">
+  Whether to respect `.gitignore` patterns
+</ParamField>
+
+**Behavior:**
+- Returns absolute paths sorted by modification time (most recent first)
+- Ignores common directories like `node_modules` and `.git` by default
+- Does not require user confirmation
+
+**Example output:**
+
+```
+Found 5 file(s) matching "*.ts" within src, sorted by modification time (newest first):
+src/file1.ts
+src/subdir/file2.ts
+src/utils/helper.ts
+src/config.ts
+src/types.ts
+```
+
+### `grep_search` (SearchText)
+
+Searches for a regular expression pattern within file contents. Returns matching lines with file paths and line numbers.
+
+<ParamField path="pattern" type="string" required>
+  Regular expression to search for (e.g., `"function\\s+myFunction"`)
+</ParamField>
+
+<ParamField path="path" type="string">
+  Absolute path to search within. Defaults to current working directory.
+</ParamField>
+
+<ParamField path="include" type="string">
+  Glob pattern to filter files (e.g., `"*.js"`, `"src/**/*.{ts,tsx}"`)
+</ParamField>
+
+**Performance:**
+- Uses `git grep` if available in a Git repository for maximum speed
+- Falls back to system `grep` or JavaScript-based search
+
+**Example output:**
+
+```
+Found 3 matches for pattern "myFunction" in path "." (filter: "*.ts"):
+---
+File: src/utils.ts
+L15: export function myFunction() {
+L22:   myFunction.call();
+---
+File: src/index.ts
+L5: import { myFunction } from './utils';
+---
+```
+
+<Tip>
+Use specific `include` patterns to narrow your search and improve performance.
+</Tip>
+
+### `replace` (Edit)
+
+Replaces text within a file with precise string matching.
+
+<ParamField path="file_path" type="string" required>
+  Path to the file to modify
+</ParamField>
+
+<ParamField path="instruction" type="string" required>
+  Semantic description of the change being made
+</ParamField>
+
+<ParamField path="old_string" type="string" required>
+  Exact literal text to find and replace
+</ParamField>
+
+<ParamField path="new_string" type="string" required>
+  Exact literal text to replace with
+</ParamField>
+
+<ParamField path="allow_multiple" type="boolean" default="false">
+  If `true`, replaces all occurrences. If `false`, only succeeds if exactly one occurrence is found.
+</ParamField>
+
+<Warning>
+This tool requires significant context around `old_string` to ensure it modifies the correct location. By default, it will fail if the text appears multiple times unless `allow_multiple` is `true`.
+</Warning>
+
+**Example:**
+
+```typescript
+// Replace a single occurrence
+replace({
+  file_path: "src/config.ts",
+  instruction: "Update API endpoint URL",
+  old_string: "const API_URL = 'http://localhost:3000'",
+  new_string: "const API_URL = 'https://api.production.com'",
+  allow_multiple: false
+})
+
+// Replace all occurrences (rename variable)
+replace({
+  file_path: "src/utils.ts",
+  instruction: "Rename oldName to newName",
+  old_string: "oldName",
+  new_string: "newName",
+  allow_multiple: true
+})
+```
+
+## Security
+
+<Card title="Trusted Folders" icon="shield-check" href="/cli/trusted-folders">
+  Learn how to manage file system access permissions using trusted folders
+</Card>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="File Management Tutorial" icon="book" href="/cli/tutorials/file-management">
+    Practical examples of using file system tools
+  </Card>
+  <Card title="Shell Commands" icon="terminal" href="/tools/shell">
+    Execute shell commands for advanced operations
+  </Card>
+</CardGroup>

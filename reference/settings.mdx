@@ -1,0 +1,472 @@
+---
+title: settings.json Reference
+description: Complete reference for Gemini CLI settings configuration
+icon: gear
+---
+
+Gemini CLI uses JSON settings files for persistent configuration. Settings can be configured at multiple levels with different scopes and precedence.
+
+## Settings File Locations
+
+Gemini CLI loads settings from multiple locations in order of precedence:
+
+<Steps>
+  <Step title="System Defaults">
+    Provides base layer of system-wide default settings
+    
+    **Locations:**
+    - Linux: `/etc/gemini-cli/system-defaults.json`
+    - Windows: `C:\ProgramData\gemini-cli\system-defaults.json`
+    - macOS: `/Library/Application Support/GeminiCli/system-defaults.json`
+    
+    Override with: `GEMINI_CLI_SYSTEM_DEFAULTS_PATH` environment variable
+  </Step>
+  
+  <Step title="User Settings">
+    Global settings for the current user
+    
+    **Location:** `~/.gemini/settings.json`
+    
+    Applies to all Gemini CLI sessions for the current user. Overrides system defaults.
+  </Step>
+  
+  <Step title="Project Settings">
+    Project-specific settings
+    
+    **Location:** `.gemini/settings.json` in your project root
+    
+    Applies only when running Gemini CLI from that specific project. Overrides user settings.
+  </Step>
+  
+  <Step title="System Settings">
+    System-wide overrides (highest precedence)
+    
+    **Locations:**
+    - Linux: `/etc/gemini-cli/settings.json`
+    - Windows: `C:\ProgramData\gemini-cli\settings.json`
+    - macOS: `/Library/Application Support/GeminiCli/settings.json`
+    
+    Override with: `GEMINI_CLI_SYSTEM_SETTINGS_PATH` environment variable
+  </Step>
+</Steps>
+
+<Tip>
+JSON-aware editors can use autocomplete and validation by pointing to the schema at:
+`https://raw.githubusercontent.com/google-gemini/gemini-cli/main/schemas/settings.schema.json`
+</Tip>
+
+## Environment Variable Substitution
+
+String values in `settings.json` can reference environment variables using `$VAR_NAME` or `${VAR_NAME}` syntax:
+
+```json
+{
+  "apiKey": "$MY_API_TOKEN",
+  "model": {
+    "name": "${GEMINI_MODEL}"
+  }
+}
+```
+
+## General Settings
+
+<ParamField path="general.vimMode" type="boolean" default="false">
+  Enable Vim keybindings in the CLI interface
+</ParamField>
+
+<ParamField path="general.defaultApprovalMode" type="enum" default="default">
+  Default approval mode for tool execution
+  
+  **Options:**
+  - `default` - Prompts for approval on each tool call
+  - `auto_edit` - Auto-approves edit tools
+  - `plan` - Read-only mode (requires experimental planning)
+</ParamField>
+
+<ParamField path="general.preferredEditor" type="string" default="undefined">
+  The preferred editor to open files in (e.g., `code`, `vim`, `nano`)
+</ParamField>
+
+<ParamField path="general.enableAutoUpdate" type="boolean" default="true">
+  Enable automatic updates for Gemini CLI
+</ParamField>
+
+<ParamField path="general.enableNotifications" type="boolean" default="false">
+  Enable run-event notifications for action-required prompts and session completion (macOS only)
+</ParamField>
+
+<ParamField path="general.maxAttempts" type="number" default="10">
+  Maximum number of attempts for requests to the main chat model (cannot exceed 10)
+</ParamField>
+
+<ParamField path="general.plan.directory" type="string" default="undefined">
+  Directory where planning artifacts are stored. Defaults to system temporary directory if not specified.
+</ParamField>
+
+<ParamField path="general.plan.modelRouting" type="boolean" default="true">
+  Automatically switch between Pro and Flash models based on Plan Mode status
+</ParamField>
+
+<ParamField path="general.sessionRetention.enabled" type="boolean" default="true">
+  Enable automatic session cleanup
+</ParamField>
+
+<ParamField path="general.sessionRetention.maxAge" type="string" default="30d">
+  Automatically delete chats older than this time period
+  
+  **Examples:** `"30d"`, `"7d"`, `"24h"`, `"1w"`
+</ParamField>
+
+## UI Settings
+
+<ParamField path="ui.theme" type="string" default="undefined">
+  Color theme for the UI. See the CLI themes guide for available options.
+</ParamField>
+
+<ParamField path="ui.autoThemeSwitching" type="boolean" default="true">
+  Automatically switch between default light and dark themes based on terminal background color
+</ParamField>
+
+<ParamField path="ui.hideBanner" type="boolean" default="false">
+  Hide the application banner at startup
+</ParamField>
+
+<ParamField path="ui.hideTips" type="boolean" default="false">
+  Hide helpful tips in the UI
+</ParamField>
+
+<ParamField path="ui.hideContextSummary" type="boolean" default="false">
+  Hide the context summary (GEMINI.md, MCP servers) above the input
+</ParamField>
+
+<ParamField path="ui.hideFooter" type="boolean" default="false">
+  Hide the footer from the UI
+</ParamField>
+
+<ParamField path="ui.showLineNumbers" type="boolean" default="true">
+  Show line numbers in the chat
+</ParamField>
+
+<ParamField path="ui.dynamicWindowTitle" type="boolean" default="true">
+  Update the terminal window title with current status icons
+  
+  - Ready: ◇
+  - Action Required: ✋
+  - Working: ✦
+</ParamField>
+
+<ParamField path="ui.useAlternateBuffer" type="boolean" default="false">
+  Use an alternate screen buffer for the UI, preserving shell history (requires restart)
+</ParamField>
+
+<ParamField path="ui.loadingPhrases" type="enum" default="tips">
+  What to show while the model is working
+  
+  **Options:** `tips`, `witty`, `all`, `off`
+</ParamField>
+
+<ParamField path="ui.accessibility.screenReader" type="boolean" default="false">
+  Render output in plain-text to be more screen reader accessible (requires restart)
+</ParamField>
+
+## Model Settings
+
+<ParamField path="model.name" type="string" default="undefined">
+  The Gemini model to use for conversations
+  
+  **Examples:** `gemini-3-pro-preview`, `gemini-2.5-flash`, `gemini-2.5-pro`
+</ParamField>
+
+<ParamField path="model.maxSessionTurns" type="number" default="-1">
+  Maximum number of user/model/tool turns to keep in a session. `-1` means unlimited.
+</ParamField>
+
+<ParamField path="model.compressionThreshold" type="number" default="0.5">
+  The fraction of context usage at which to trigger context compression
+  
+  **Examples:** `0.2`, `0.3`, `0.5` (requires restart)
+</ParamField>
+
+<ParamField path="model.disableLoopDetection" type="boolean" default="false">
+  Disable automatic detection and prevention of infinite loops (requires restart)
+</ParamField>
+
+## Context Settings
+
+<ParamField path="context.fileName" type="string | string[]" default="undefined">
+  The name of the context file(s) to load into memory
+  
+  **Examples:**
+  ```json
+  "context": {
+    "fileName": "GEMINI.md"
+  }
+  ```
+  
+  ```json
+  "context": {
+    "fileName": ["AGENTS.md", "CONTEXT.md", "GEMINI.md"]
+  }
+  ```
+</ParamField>
+
+<ParamField path="context.includeDirectoryTree" type="boolean" default="true">
+  Whether to include the directory tree of the current working directory in the initial request
+</ParamField>
+
+<ParamField path="context.discoveryMaxDirs" type="number" default="200">
+  Maximum number of directories to search for memory files
+</ParamField>
+
+<ParamField path="context.includeDirectories" type="array" default="[]">
+  Additional directories to include in the workspace context
+  
+  **Example:**
+  ```json
+  "context": {
+    "includeDirectories": ["../lib", "../docs", "~/shared/utils"]
+  }
+  ```
+</ParamField>
+
+<ParamField path="context.loadMemoryFromIncludeDirectories" type="boolean" default="false">
+  Controls how `/memory refresh` loads GEMINI.md files. When true, include directories are scanned.
+</ParamField>
+
+<ParamField path="context.fileFiltering.respectGitIgnore" type="boolean" default="true">
+  Respect .gitignore files when searching (requires restart)
+</ParamField>
+
+<ParamField path="context.fileFiltering.respectGeminiIgnore" type="boolean" default="true">
+  Respect .geminiignore files when searching (requires restart)
+</ParamField>
+
+<ParamField path="context.fileFiltering.enableRecursiveFileSearch" type="boolean" default="true">
+  Enable recursive file search when completing @ references in the prompt (requires restart)
+</ParamField>
+
+<ParamField path="context.fileFiltering.customIgnoreFilePaths" type="array" default="[]">
+  Additional ignore file paths to respect. Takes precedence over .geminiignore and .gitignore.
+  
+  **Example:**
+  ```json
+  "context": {
+    "fileFiltering": {
+      "customIgnoreFilePaths": [".myignore", "config/.exclude"]
+    }
+  }
+  ```
+</ParamField>
+
+## Tools Settings
+
+<ParamField path="tools.sandbox" type="boolean | string" default="undefined">
+  Sandbox execution environment. Set to boolean to enable/disable, or provide a string path to a sandbox profile.
+  
+  **Examples:** `true`, `false`, `"docker"`, `"podman"`, `"/path/to/profile"`
+  
+  (Requires restart)
+</ParamField>
+
+<ParamField path="tools.shell.enableInteractiveShell" type="boolean" default="true">
+  Use node-pty for an interactive shell experience (requires restart)
+</ParamField>
+
+<ParamField path="tools.shell.showColor" type="boolean" default="false">
+  Show color in shell output
+</ParamField>
+
+<ParamField path="tools.useRipgrep" type="boolean" default="true">
+  Use ripgrep for file content search instead of fallback implementation
+</ParamField>
+
+<ParamField path="tools.truncateToolOutputThreshold" type="number" default="40000">
+  Maximum characters to show when truncating large tool outputs. Set to 0 or negative to disable.
+</ParamField>
+
+<ParamField path="tools.disableLLMCorrection" type="boolean" default="true">
+  Disable LLM-based error correction for edit tools. When enabled, tools fail immediately if exact string matches are not found.
+</ParamField>
+
+## Security Settings
+
+<ParamField path="security.disableYoloMode" type="boolean" default="false">
+  Disable YOLO mode, even if enabled by a flag (requires restart)
+</ParamField>
+
+<ParamField path="security.enablePermanentToolApproval" type="boolean" default="false">
+  Enable the "Allow for all future sessions" option in tool confirmation dialogs
+</ParamField>
+
+<ParamField path="security.blockGitExtensions" type="boolean" default="false">
+  Blocks installing and loading extensions from Git (requires restart)
+</ParamField>
+
+<ParamField path="security.folderTrust.enabled" type="boolean" default="true">
+  Enable folder trust system (requires restart)
+</ParamField>
+
+<ParamField path="security.environmentVariableRedaction.enabled" type="boolean" default="false">
+  Enable redaction of environment variables that may contain secrets (requires restart)
+</ParamField>
+
+<ParamField path="security.enableConseca" type="boolean" default="false">
+  Enable context-aware security checker. Uses an LLM to dynamically generate and enforce security policies.
+</ParamField>
+
+## MCP Servers
+
+Configure connections to Model-Context Protocol (MCP) servers for discovering custom tools.
+
+<ParamField path="mcpServers.<SERVER_NAME>" type="object">
+  Configuration for a named MCP server
+  
+  <Expandable title="Server Configuration Properties">
+    - `command` (string, optional): Command to execute to start the MCP server
+    - `args` (array of strings, optional): Arguments to pass to the command
+    - `env` (object, optional): Environment variables for the server process
+    - `cwd` (string, optional): Working directory for the server
+    - `url` (string, optional): URL of an MCP server using Server-Sent Events (SSE)
+    - `httpUrl` (string, optional): URL of an MCP server using streamable HTTP
+    - `headers` (object, optional): HTTP headers to send with requests
+    - `timeout` (number, optional): Timeout in milliseconds for requests
+    - `trust` (boolean, optional): Trust this server and bypass tool confirmations
+    - `includeTools` (array of strings, optional): Allowlist of tool names to include
+    - `excludeTools` (array of strings, optional): Blocklist of tool names to exclude
+  </Expandable>
+</ParamField>
+
+**Example:**
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "$GITHUB_TOKEN"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"]
+    }
+  }
+}
+```
+
+## Telemetry Settings
+
+Configure logging and metrics collection for Gemini CLI.
+
+<ParamField path="telemetry.enabled" type="boolean" default="false">
+  Whether telemetry is enabled
+</ParamField>
+
+<ParamField path="telemetry.target" type="string" default="local">
+  Destination for collected telemetry
+  
+  **Options:** `local`, `gcp`
+</ParamField>
+
+<ParamField path="telemetry.otlpEndpoint" type="string">
+  The endpoint for the OTLP Exporter
+</ParamField>
+
+<ParamField path="telemetry.otlpProtocol" type="string">
+  The protocol for the OTLP Exporter
+  
+  **Options:** `grpc`, `http`
+</ParamField>
+
+<ParamField path="telemetry.logPrompts" type="boolean" default="false">
+  Whether to include the content of user prompts in the logs
+</ParamField>
+
+<ParamField path="telemetry.outfile" type="string">
+  File to write telemetry to when target is `local`
+</ParamField>
+
+## Skills & Hooks
+
+<ParamField path="skills.enabled" type="boolean" default="true">
+  Enable Agent Skills (requires restart)
+</ParamField>
+
+<ParamField path="hooksConfig.enabled" type="boolean" default="true">
+  Enable the hooks system. When disabled, no hooks will be executed. (requires restart)
+</ParamField>
+
+<ParamField path="hooksConfig.notifications" type="boolean" default="true">
+  Show visual indicators when hooks are executing
+</ParamField>
+
+## Example Configuration
+
+```json
+{
+  "general": {
+    "vimMode": true,
+    "preferredEditor": "code",
+    "sessionRetention": {
+      "enabled": true,
+      "maxAge": "30d",
+      "maxCount": 100
+    }
+  },
+  "ui": {
+    "theme": "GitHub",
+    "hideBanner": true,
+    "hideTips": false,
+    "customWittyPhrases": [
+      "Connecting to AGI",
+      "Optimizing neural pathways"
+    ]
+  },
+  "model": {
+    "name": "gemini-2.5-pro",
+    "maxSessionTurns": 10,
+    "compressionThreshold": 0.3
+  },
+  "context": {
+    "fileName": ["CONTEXT.md", "GEMINI.md"],
+    "includeDirectories": ["../lib", "~/shared/utils"],
+    "fileFiltering": {
+      "respectGitIgnore": true
+    }
+  },
+  "tools": {
+    "sandbox": "docker",
+    "shell": {
+      "showColor": true
+    }
+  },
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "$GITHUB_TOKEN"
+      }
+    }
+  }
+}
+```
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="code" href="/reference/environment-variables">
+    Configure Gemini CLI using environment variables
+  </Card>
+  <Card title="GEMINI.md Files" icon="file" href="/reference/gemini-md">
+    Provide context with GEMINI.md files
+  </Card>
+  <Card title="MCP Server Setup" icon="plug" href="/tools/mcp-server">
+    Integrate custom tools via MCP
+  </Card>
+  <Card title="Command Reference" icon="terminal" href="/reference/commands">
+    All available slash commands
+  </Card>
+</CardGroup>

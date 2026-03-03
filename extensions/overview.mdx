@@ -1,0 +1,365 @@
+---
+title: Extensions Overview
+description: Extend Gemini CLI with custom tools, commands, and capabilities
+icon: puzzle-piece
+---
+
+Gemini CLI extensions package prompts, MCP servers, custom commands, themes, hooks, sub-agents, and agent skills into a familiar and user-friendly format. Extensions enable you to expand the capabilities of Gemini CLI and share those capabilities with others.
+
+<Card title="Extension Gallery" icon="store" href="https://geminicli.com/extensions/browse/">
+  Browse the official Gemini CLI extension gallery to discover available extensions
+</Card>
+
+## What Are Extensions?
+
+Extensions are self-contained packages that can include:
+
+<CardGroup cols={2}>
+  <Card title="MCP Servers" icon="plug">
+    Expose new tools and data sources to the model
+  </Card>
+  <Card title="Custom Commands" icon="terminal">
+    Create shortcuts for repetitive tasks and complex prompts
+  </Card>
+  <Card title="Context Files" icon="file-lines">
+    Provide persistent instructions and knowledge to the model
+  </Card>
+  <Card title="Agent Skills" icon="brain">
+    Bundle specialized expertise for complex tasks
+  </Card>
+  <Card title="Hooks" icon="link">
+    Customize CLI behavior at lifecycle events
+  </Card>
+  <Card title="Themes" icon="palette">
+    Personalize the CLI's visual appearance
+  </Card>
+</CardGroup>
+
+## Choose Your Path
+
+<Tabs>
+  <Tab title="Use Extensions">
+    Learn how to discover, install, and manage extensions to enhance your Gemini CLI experience.
+
+    ### Installation
+
+    Install an extension from GitHub:
+
+    ```bash
+    gemini extensions install https://github.com/gemini-cli-extensions/workspace
+    ```
+
+    ### Managing Extensions
+
+    List installed extensions:
+
+    ```bash
+    # From CLI
+    gemini extensions list
+
+    # From interactive session
+    /extensions list
+    ```
+
+    <Card title="Extension Reference" icon="book" href="/extensions/reference">
+      Learn about advanced installation options and management commands
+    </Card>
+  </Tab>
+  
+  <Tab title="Build Extensions">
+    Learn how to create, test, and share your own extensions with the community.
+
+    ### Quick Start
+
+    Create a new extension from a template:
+
+    ```bash
+    gemini extensions new my-first-extension mcp-server
+    ```
+
+    This creates a directory with:
+    - `gemini-extension.json` - Extension manifest
+    - `example.js` - MCP server implementation
+    - `package.json` - Node.js dependencies
+
+    ### Development Workflow
+
+    <Steps>
+      <Step title="Create Extension">
+        Use a template or start from scratch
+      </Step>
+      
+      <Step title="Add Features">
+        Implement tools, commands, or other capabilities
+      </Step>
+      
+      <Step title="Link Locally">
+        Test your extension in development
+        ```bash
+        gemini extensions link .
+        ```
+      </Step>
+      
+      <Step title="Publish">
+        Share via GitHub or the extension gallery
+      </Step>
+    </Steps>
+
+    <CardGroup cols={2}>
+      <Card title="Writing Extensions" icon="code" href="/extensions/writing-extensions">
+        Complete guide to creating extensions
+      </Card>
+      <Card title="Best Practices" icon="star" href="/extensions/best-practices">
+        Build secure and reliable extensions
+      </Card>
+    </CardGroup>
+  </Tab>
+</Tabs>
+
+## Extension Features
+
+Decide which features your extension needs based on your use case.
+
+<AccordionGroup>
+  <Accordion title="MCP Servers" icon="plug">
+    **What it is:** A standard way to expose new tools and data sources to the model.
+
+    **When to use it:** Use this when you want the model to perform new actions like:
+    - Fetching data from an internal API
+    - Querying a database
+    - Controlling a local application
+    - Accessing external services
+
+    **Invoked by:** Model automatically
+
+    **Example:**
+    ```typescript
+    server.registerTool(
+      'fetch_posts',
+      {
+        description: 'Fetches posts from API',
+        inputSchema: z.object({}).shape,
+      },
+      async () => {
+        const response = await fetch('https://api.example.com/posts');
+        return { content: [{ type: 'text', text: JSON.stringify(await response.json()) }] };
+      }
+    );
+    ```
+
+    <Card title="MCP Server Guide" icon="book" href="/tools/mcp-server">
+      Learn more about MCP server integration
+    </Card>
+  </Accordion>
+
+  <Accordion title="Custom Commands" icon="terminal">
+    **What it is:** A shortcut (like `/my-cmd`) that executes a pre-defined prompt or shell command.
+
+    **When to use it:** Use this for:
+    - Repetitive tasks
+    - Saving long, complex prompts
+    - Automation workflows
+
+    **Invoked by:** User manually
+
+    **Example:**
+    ```toml
+    # commands/fs/grep-code.toml
+    prompt = """
+    Please summarize the findings for the pattern `{{args}}`.
+
+    Search Results:
+    !{grep -r {{args}} .}
+    """
+    ```
+
+    Usage: `/fs:grep-code "function.*User"`
+
+    <Card title="Custom Commands" icon="book" href="/advanced/custom-commands">
+      Learn about creating custom commands
+    </Card>
+  </Accordion>
+
+  <Accordion title="Context Files (GEMINI.md)" icon="file-lines">
+    **What it is:** A markdown file containing instructions loaded into the model's context at the start of every session.
+
+    **When to use it:** Use this to:
+    - Define the extension's "personality"
+    - Set coding standards
+    - Provide essential knowledge the model should always have
+
+    **Invoked by:** CLI provides to model automatically
+
+    **Example:**
+    ```markdown
+    # My Extension Instructions
+
+    You are an expert developer assistant specializing in Python.
+    When analyzing code:
+    1. Check for PEP 8 compliance
+    2. Suggest type hints where missing
+    3. Recommend modern Python idioms
+    ```
+
+    Configure in `gemini-extension.json`:
+    ```json
+    {
+      "contextFileName": "GEMINI.md"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Agent Skills" icon="brain">
+    **What it is:** Specialized instructions and workflows that the model activates only when needed.
+
+    **When to use it:** Use this for:
+    - Complex, occasional tasks ("create a PR", "audit security")
+    - Avoiding context window clutter when skill isn't needed
+    - Task-specific expertise
+
+    **Invoked by:** Model when task matches skill description
+
+    **Example:**
+    ```markdown
+    ---
+    name: security-audit
+    description: Expertise in auditing code for security vulnerabilities
+    ---
+
+    # Security Auditor
+
+    When auditing code:
+    1. Look for common vulnerabilities (OWASP Top 10)
+    2. Check for hardcoded secrets or API keys
+    3. Suggest remediation steps for any findings
+    ```
+
+    <Card title="Agent Skills" icon="book" href="/advanced/skills">
+      Learn about agent skills system
+    </Card>
+  </Accordion>
+
+  <Accordion title="Hooks" icon="link">
+    **What it is:** A way to intercept and customize the CLI's behavior at specific lifecycle events.
+
+    **When to use it:** Use this when you want to:
+    - Validate tool arguments before execution
+    - Log activity for auditing
+    - Modify the model's input/output
+    - Automate actions based on model behavior
+
+    **Invoked by:** CLI at specific lifecycle events
+
+    **Example:**
+    ```typescript
+    export default {
+      beforeToolCall: async (toolName, params) => {
+        console.log(`Executing ${toolName}`);
+        // Validate, modify, or block the tool call
+        return params;
+      },
+      afterToolCall: async (toolName, result) => {
+        console.log(`Completed ${toolName}`);
+        return result;
+      }
+    };
+    ```
+
+    <Card title="Hooks System" icon="book" href="/hooks/index">
+      Learn about the hooks system
+    </Card>
+  </Accordion>
+
+  <Accordion title="Custom Themes" icon="palette">
+    **What it is:** A set of color definitions to personalize the CLI UI.
+
+    **When to use it:** Use this to:
+    - Provide a unique visual identity for your extension
+    - Offer specialized high-contrast schemes
+    - Create thematic color palettes
+
+    **Invoked by:** User via `/theme` command
+
+    **Example:**
+    ```json
+    {
+      "themes": {
+        "myTheme": {
+          "primary": "#00ff00",
+          "secondary": "#0000ff",
+          "background": "#1e1e1e",
+          "text": "#ffffff"
+        }
+      }
+    }
+    ```
+
+    Usage: `/theme myTheme`
+
+    <Card title="Themes Reference" icon="book" href="/extensions/reference#themes">
+      Learn about theme configuration
+    </Card>
+  </Accordion>
+</AccordionGroup>
+
+## Example Use Cases
+
+<CardGroup cols={2}>
+  <Card title="API Integration" icon="cloud">
+    Create an extension with MCP tools to interact with your internal API
+  </Card>
+  <Card title="Code Quality" icon="check-circle">
+    Bundle linting commands and context about your team's coding standards
+  </Card>
+  <Card title="Database Tools" icon="database">
+    Expose database query tools and migration commands
+  </Card>
+  <Card title="DevOps Workflows" icon="rocket">
+    Package deployment commands and infrastructure management tools
+  </Card>
+  <Card title="Documentation" icon="book">
+    Create commands that generate and update project documentation
+  </Card>
+  <Card title="Testing Utilities" icon="vial">
+    Bundle test generation skills and test execution commands
+  </Card>
+</CardGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Install an Extension">
+    Try installing an extension from the gallery:
+    ```bash
+    gemini extensions install https://github.com/gemini-cli-extensions/workspace
+    ```
+  </Step>
+  
+  <Step title="Explore Capabilities">
+    Use `/extensions list` to see what the extension provides
+  </Step>
+  
+  <Step title="Create Your Own">
+    When ready, create your first extension:
+    ```bash
+    gemini extensions new my-extension mcp-server
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Writing Extensions" icon="code" href="/extensions/writing-extensions">
+    Complete guide to creating your first extension
+  </Card>
+  <Card title="Extension Reference" icon="book" href="/extensions/reference">
+    Detailed API reference and configuration options
+  </Card>
+  <Card title="Best Practices" icon="star" href="/extensions/best-practices">
+    Learn how to build secure and reliable extensions
+  </Card>
+  <Card title="Publishing Guide" icon="upload" href="/extensions/releasing">
+    Share your extension with the community
+  </Card>
+</CardGroup>

@@ -1,0 +1,508 @@
+---
+title: Tools
+description: Learn how Gemini CLI tools extend the model's capabilities to interact with your local environment
+---
+
+Gemini CLI uses tools to extend the model's capabilities beyond text generation. Tools allow the AI to read files, execute commands, search the web, and perform actions on your behalf.
+
+## How Tools Work
+
+You use tools indirectly through natural language prompts. The model decides when tools are needed and requests them automatically.
+
+<Steps>
+  <Step title="You provide a prompt">
+    Enter a request like "Update the README with installation instructions" or use special syntax like `@package.json`.
+  </Step>
+  
+  <Step title="Model analyzes the request">
+    The Gemini model determines if tools are needed to fulfill your request (e.g., reading the current README, writing the updated content).
+  </Step>
+  
+  <Step title="Tool validation">
+    The CLI validates tool parameters and checks security settings to ensure the operation is safe.
+  </Step>
+  
+  <Step title="User confirmation">
+    For sensitive operations (file writes, shell commands), you're prompted to approve the action with a preview of changes.
+  </Step>
+  
+  <Step title="Tool execution">
+    The approved tool executes and returns results to the model.
+  </Step>
+  
+  <Step title="Model responds">
+    The model uses tool results to generate a final, grounded answer.
+  </Step>
+</Steps>
+
+## Tool Categories
+
+Gemini CLI tools fall into three main categories:
+
+<CardGroup cols={3}>
+  <Card title="User-Triggered" icon="user">
+    Tools you activate explicitly with special syntax
+  </Card>
+  <Card title="Model-Triggered" icon="robot">
+    Tools the model requests automatically when needed
+  </Card>
+  <Card title="Information" icon="globe">
+    Tools for accessing external data and services
+  </Card>
+</CardGroup>
+
+## User-Triggered Tools
+
+You can directly trigger these tools using special syntax in your prompts.
+
+### File Access (`@`)
+
+Include file or directory contents in your prompt using the `@` symbol.
+
+**Syntax:**
+```bash
+@path/to/file.js
+@src/components/
+```
+
+**Examples:**
+```bash
+# Include a single file
+@package.json explain the dependencies
+
+# Include a directory
+@src/utils/ what utility functions are available?
+
+# Multiple files
+@src/index.js @src/config.js how are these files connected?
+```
+
+<Info>
+This triggers the `read_many_files` tool, which reads and includes the content in your prompt context.
+</Info>
+
+### Shell Commands (`!`)
+
+Execute shell commands directly using the `!` symbol.
+
+**Syntax:**
+```bash
+!command [arguments]
+```
+
+**Examples:**
+```bash
+# Check git status
+!git status
+
+# Run tests
+!npm test
+
+# List files
+!ls -la src/
+```
+
+<Warning>
+Shell commands require confirmation before execution. Always review the command carefully before approving.
+</Warning>
+
+## Model-Triggered Tools
+
+The model automatically requests these tools when needed to fulfill your requests. You don't call them manually.
+
+### File Management Tools
+
+These tools let the model explore and modify your local codebase.
+
+<AccordionGroup>
+  <Accordion title="list_directory - List files and folders" icon="folder-open">
+    Lists files and subdirectories within a specified path.
+    
+    **Parameters:**
+    - `dir_path` - Absolute or relative path to directory
+    - `ignore` - Optional glob patterns to exclude
+    - `file_filtering_options` - Optional `.gitignore` and `.geminiignore` compliance
+    
+    **When used:**
+    - "What files are in the src directory?"
+    - "Show me the project structure"
+    - "List all components"
+    
+    **Confirmation:** No
+  </Accordion>
+  
+  <Accordion title="read_file - Read file contents" icon="file">
+    Reads and returns the content of a specific file. Supports text, images, audio, and PDF.
+    
+    **Parameters:**
+    - `file_path` - Path to the file
+    - `offset` - Optional start line (0-based)
+    - `limit` - Optional maximum lines to read
+    
+    **When used:**
+    - "Read the config file"
+    - "What's in index.js?"
+    - "Show me the README"
+    
+    **Confirmation:** No
+  </Accordion>
+  
+  <Accordion title="write_file - Write or create files" icon="pen-to-square">
+    Writes content to a file, creating it if it doesn't exist or overwriting if it does.
+    
+    **Parameters:**
+    - `file_path` - Path to the file
+    - `content` - Data to write
+    
+    **When used:**
+    - "Create a new component file"
+    - "Update the package.json"
+    - "Write this config to settings.json"
+    
+    **Confirmation:** ✅ Required - Shows diff preview
+  </Accordion>
+  
+  <Accordion title="glob - Find files by pattern" icon="magnifying-glass">
+    Finds files matching glob patterns across your workspace.
+    
+    **Parameters:**
+    - `pattern` - Glob pattern (e.g., `*.py`, `src/**/*.js`)
+    - `path` - Optional directory to search (defaults to root)
+    - `case_sensitive` - Optional case sensitivity (defaults to false)
+    - `respect_git_ignore` - Optional .gitignore compliance (defaults to true)
+    
+    **When used:**
+    - "Find all TypeScript files"
+    - "Locate test files"
+    - "Show me all markdown documents"
+    
+    **Confirmation:** No
+  </Accordion>
+  
+  <Accordion title="grep_search - Search file contents" icon="search">
+    Searches for regex patterns within file contents using grep or ripgrep.
+    
+    **Parameters:**
+    - `pattern` - Regular expression to search for
+    - `path` - Optional directory to search
+    - `include` - Optional glob pattern to filter files
+    
+    **When used:**
+    - "Find all TODO comments"
+    - "Search for function definitions"
+    - "Where is this variable used?"
+    
+    **Confirmation:** No
+  </Accordion>
+  
+  <Accordion title="replace - Edit file contents" icon="pencil">
+    Performs precise text replacements within a file.
+    
+    **Parameters:**
+    - `file_path` - Path to the file
+    - `instruction` - Semantic description of the change
+    - `old_string` - Exact text to find
+    - `new_string` - Exact text to replace with
+    - `allow_multiple` - Optional flag to replace all occurrences
+    
+    **When used:**
+    - "Update the API endpoint URL"
+    - "Change the port number"
+    - "Rename this function"
+    
+    **Confirmation:** ✅ Required - Shows diff preview
+  </Accordion>
+</AccordionGroup>
+
+### Agent Coordination Tools
+
+These tools help the model plan tasks and interact with you.
+
+<AccordionGroup>
+  <Accordion title="ask_user - Request clarification" icon="question">
+    Prompts you for clarification or missing information through an interactive dialog.
+    
+    **When used:**
+    - Model needs more context
+    - Ambiguous requirements
+    - Missing configuration details
+    
+    **Confirmation:** Interactive response required
+  </Accordion>
+  
+  <Accordion title="save_memory - Save to GEMINI.md" icon="bookmark">
+    Saves important facts to your long-term memory (`GEMINI.md` file).
+    
+    **When used:**
+    - You ask to remember something
+    - Important project conventions noted
+    - Persistent preferences established
+    
+    **Confirmation:** Yes, for file write
+  </Accordion>
+  
+  <Accordion title="write_todos - Manage task lists" icon="list-check">
+    Creates and manages a list of subtasks for complex plans.
+    
+    **When used:**
+    - Breaking down large tasks
+    - Tracking multi-step operations
+    - Planning complex changes
+    
+    **Confirmation:** No
+  </Accordion>
+  
+  <Accordion title="activate_skill - Load specialized knowledge" icon="wand-magic-sparkles">
+    Loads specialized procedural expertise for specific tasks.
+    
+    **When used:**
+    - Domain-specific workflows needed
+    - Specialized procedures required
+    - Expert guidance necessary
+    
+    **Confirmation:** No
+  </Accordion>
+  
+  <Accordion title="browser_agent - Automate web tasks" icon="browser">
+    Automates web browser tasks through the accessibility tree (experimental).
+    
+    **When used:**
+    - Filling web forms
+    - Navigating websites
+    - Extracting web page data
+    
+    **Requirements:** Chrome 144+, must be enabled in settings
+    
+    **Confirmation:** Yes, for sensitive actions
+  </Accordion>
+  
+  <Accordion title="get_internal_docs - Access CLI documentation" icon="book">
+    Accesses Gemini CLI's own documentation to answer questions.
+    
+    **When used:**
+    - Questions about CLI features
+    - Configuration help needed
+    - Command reference required
+    
+    **Confirmation:** No
+  </Accordion>
+</AccordionGroup>
+
+### Information Gathering Tools
+
+These tools provide access to external data and services.
+
+<AccordionGroup>
+  <Accordion title="web_fetch - Retrieve web content" icon="download">
+    Retrieves and processes content from specific URLs.
+    
+    **Parameters:**
+    - `url` - The URL to fetch
+    - `options` - Optional request configuration
+    
+    **When used:**
+    - "Get content from this URL"
+    - "Fetch the API documentation"
+    - "Read this blog post"
+    
+    **Confirmation:** No (may require for sensitive operations)
+  </Accordion>
+  
+  <Accordion title="google_web_search - Search the web" icon="google">
+    Performs Google Search to find up-to-date information.
+    
+    **Parameters:**
+    - `query` - Search query string
+    
+    **When used:**
+    - "Search for best practices"
+    - "Find recent documentation"
+    - "Look up current syntax"
+    
+    **Confirmation:** No
+  </Accordion>
+</AccordionGroup>
+
+## Security and Confirmation
+
+Safety is a core part of the tool system. Gemini CLI implements several safeguards:
+
+### User Confirmation
+
+You must manually approve tools that modify files or execute shell commands.
+
+<CodeGroup>
+```bash File Write Confirmation
+┌─ write_file ────────────────────────────────────┐
+│ Path: src/config.js                             │
+│                                                  │
+│ + export const API_URL = 'https://api.example'; │
+│                                                  │
+│ Approve this change? [y/n]                      │
+└──────────────────────────────────────────────────┘
+```
+
+```bash Shell Command Confirmation  
+┌─ run_shell_command ─────────────────────────────┐
+│ Command: npm install axios                      │
+│                                                  │
+│ Execute this command? [y/n]                     │
+└──────────────────────────────────────────────────┘
+```
+</CodeGroup>
+
+<Warning>
+Always review confirmation prompts carefully. Verify that:
+- File changes match your intent
+- Shell commands are safe to execute
+- Paths and parameters are correct
+</Warning>
+
+### Sandboxing
+
+You can run tool executions in secure, containerized environments to isolate changes from your host system.
+
+<Card title="Learn More About Sandboxing" icon="shield" href="/cli/sandbox">
+  Configure sandboxed execution environments for additional security
+</Card>
+
+### Trusted Folders
+
+Configure which directories allow the model to use system tools.
+
+<Card title="Configure Trusted Folders" icon="folder-check" href="/cli/trusted-folders">
+  Set up directory-based execution policies
+</Card>
+
+### Policy Engine
+
+Use fine-grained control over tool execution with the Policy Engine.
+
+<Card title="Policy Engine Reference" icon="shield-halved" href="/reference/extensions-api#policy-engine">
+  Define custom rules for tool execution
+</Card>
+
+## Extending with MCP Servers
+
+You can extend Gemini CLI with custom tools using Model Context Protocol (MCP) servers.
+
+**Example MCP integrations:**
+```bash
+# GitHub operations
+> @github List my open pull requests
+
+# Slack integration
+> @slack Send a summary to #dev channel
+
+# Database queries
+> @database Find inactive users
+```
+
+<Card title="MCP Server Integration" icon="plug" href="/tools/mcp-server">
+  Learn how to configure and use MCP servers
+</Card>
+
+## Tool Development
+
+You can create custom tools for Gemini CLI.
+
+<Card title="Tools API Reference" icon="code" href="/reference/tools-api">
+  Build your own tools with the Tools API
+</Card>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use descriptive prompts" icon="message">
+    Clear prompts help the model select the right tools:
+    
+    ✅ **Good:** "Update the API endpoint in config.js from localhost to production URL"
+    
+    ❌ **Vague:** "Fix the config"
+  </Accordion>
+  
+  <Accordion title="Review confirmations carefully" icon="eye">
+    Always verify:
+    - File paths are correct
+    - Changes match your intent
+    - Commands are safe to execute
+    
+    Don't approve without reading!
+  </Accordion>
+  
+  <Accordion title="Use @ for context" icon="at">
+    Include relevant files in your prompt:
+    
+    ```bash
+    @src/api/client.js @src/config.js 
+    Update the API client to use the config settings
+    ```
+  </Accordion>
+  
+  <Accordion title="Leverage GEMINI.md for instructions" icon="file">
+    Instead of repeating tool usage preferences, add them to your `GEMINI.md`:
+    
+    ```markdown
+    ## Tool Preferences
+    - Always run tests after modifying code
+    - Use TypeScript for new files
+    - Follow existing code style
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Tool execution fails" icon="circle-exclamation">
+    **Common causes:**
+    - Insufficient permissions
+    - File or directory doesn't exist
+    - Not in a trusted folder
+    
+    **Solutions:**
+    - Check file permissions
+    - Verify paths are correct
+    - Configure trusted folders
+  </Accordion>
+  
+  <Accordion title="Model doesn't use tools" icon="question">
+    **Common causes:**
+    - Prompt is too vague
+    - Tool not needed for the task
+    - Tool disabled in settings
+    
+    **Solutions:**
+    - Be more specific in your request
+    - Explicitly mention what you want (e.g., "read the file and...")
+    - Check tool configuration in settings
+  </Accordion>
+  
+  <Accordion title="Unwanted tool confirmations" icon="bell">
+    **Common causes:**
+    - Security settings require confirmation
+    - Operating in untrusted directory
+    
+    **Solutions:**
+    - Add directory to trusted folders
+    - Adjust confirmation settings
+    - Use sandbox mode for experimentation
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="How It Works" href="/concepts/how-it-works" icon="diagram-project">
+    Understand the tool orchestration flow
+  </Card>
+  <Card title="Context Management" href="/concepts/context" icon="file">
+    Learn how to provide instructions with GEMINI.md
+  </Card>
+  <Card title="File Management Tutorial" href="/cli/tutorials/file-management" icon="folder">
+    Hands-on guide to working with files
+  </Card>
+  <Card title="Shell Commands Tutorial" href="/cli/tutorials/shell-commands" icon="terminal">
+    Master terminal integration
+  </Card>
+</CardGroup>

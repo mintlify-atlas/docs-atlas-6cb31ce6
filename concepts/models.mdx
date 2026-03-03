@@ -1,0 +1,338 @@
+---
+title: Models
+description: Understand available Gemini models and how to select the right one for your task
+---
+
+Gemini CLI gives you access to Google's most advanced language models. Understanding the different models and when to use them will help you get the best results for your tasks.
+
+## Model Selection
+
+Use the `/model` command to configure which model Gemini CLI uses:
+
+```bash
+/model
+```
+
+This opens a dialog with your model options. You can also use the `--model` flag when starting Gemini CLI:
+
+```bash
+gemini --model gemini-2.5-flash
+```
+
+<Note>
+The `/model` command and `--model` flag do not override the model used by sub-agents. You may see other models in your usage reports even when specifying a particular model.
+</Note>
+
+## Model Options
+
+Gemini CLI offers three main approaches to model selection:
+
+<Tabs>
+  <Tab title="Auto (Gemini 3)">
+    ### Auto (Gemini 3) - Recommended
+    
+    Let the system automatically choose the best Gemini 3 model for your task.
+    
+    **Available models:**
+    - `gemini-3-pro-preview` - For complex reasoning tasks
+    - `gemini-3-flash-preview` - For fast, simple operations
+    
+    **Best for:**
+    - Most users and general-purpose development
+    - Projects with a mix of complex and simple tasks
+    - When you want optimal balance of speed and intelligence
+    
+    **Example use cases:**
+    - Building a web application (architecture planning + CSS generation)
+    - Debugging issues (complex analysis + quick file edits)
+    - Code reviews (deep understanding + formatting fixes)
+  </Tab>
+  
+  <Tab title="Auto (Gemini 2.5)">
+    ### Auto (Gemini 2.5)
+    
+    Let the system automatically choose the best Gemini 2.5 model for your task.
+    
+    **Available models:**
+    - `gemini-2.5-pro` - For complex reasoning tasks
+    - `gemini-2.5-flash` - For fast, simple operations
+    
+    **Best for:**
+    - Users who prefer the Gemini 2.5 model family
+    - Stable, production-grade models
+    - When you want proven performance
+  </Tab>
+  
+  <Tab title="Manual Selection">
+    ### Manual Model Selection
+    
+    Select a specific model to use for all interactions.
+    
+    **Available when:**
+    - You need consistent behavior from a specific model
+    - You're optimizing for a particular use case
+    - You want to test different models for comparison
+    
+    **Options include:**
+    - `gemini-3-pro-preview`
+    - `gemini-3-flash-preview`
+    - `gemini-2.5-pro`
+    - `gemini-2.5-flash`
+    - And other available Gemini models
+  </Tab>
+</Tabs>
+
+## Model Families
+
+### Pro Models
+
+Pro models offer the highest levels of reasoning and creativity.
+
+<Card title="When to Use Pro" icon="brain">
+  - Complex multi-stage debugging
+  - Architectural design and planning
+  - Advanced code refactoring
+  - Deep codebase analysis
+  - Novel problem-solving requiring creativity
+</Card>
+
+**Characteristics:**
+- Higher reasoning capabilities
+- Better for complex tasks
+- Slower response times
+- Higher token costs
+
+### Flash Models
+
+Flash models provide fast responses for simpler tasks.
+
+<Card title="When to Use Flash" icon="bolt">
+  - Simple code generation
+  - Quick file edits
+  - Format conversions (JSON to YAML)
+  - Basic questions and explanations
+  - Rapid iteration on small changes
+</Card>
+
+**Characteristics:**
+- Very fast response times
+- Optimized for simple tasks
+- Lower token costs
+- Good for high-volume operations
+
+### Auto Mode (Recommended)
+
+Auto mode intelligently selects between Pro and Flash based on task complexity.
+
+<Card title="Why Use Auto" icon="wand-magic-sparkles">
+  - System automatically matches model to task complexity
+  - Optimal balance of speed and intelligence
+  - Cost-effective for mixed workloads
+  - No manual switching required
+</Card>
+
+**How it works:**
+- Simple tasks automatically use Flash for speed
+- Complex tasks automatically use Pro for quality
+- The system learns from task patterns
+- You get the best model for each specific request
+
+## Model Context Windows
+
+Gemini 3 models feature a **1M token context window**, allowing you to:
+
+- Work with extremely large codebases
+- Maintain very long conversations
+- Include extensive documentation in context
+- Process large files without truncation
+
+<Tip>
+Use `/stats model` to check your current token usage and see how much of the context window you're using.
+</Tip>
+
+## Best Practices
+
+### Default to Auto
+
+For most users, the Auto option provides the best experience:
+
+<CodeGroup>
+```bash Terminal
+/model
+# Select: Auto (Gemini 3)
+```
+
+```bash Command Line
+gemini --model auto
+```
+</CodeGroup>
+
+**Benefits:**
+- Automatically optimizes for each task
+- Balances speed and quality
+- Handles mixed workloads efficiently
+- Reduces cognitive overhead of model selection
+
+### Switch to Pro for Better Results
+
+If Auto mode isn't giving you the results you need:
+
+```bash
+/model
+# Select: Manual > gemini-3-pro-preview
+```
+
+**Use Pro when:**
+- Debugging complex, multi-component issues
+- Designing system architecture
+- Reverse engineering unfamiliar code
+- Solving novel problems without clear patterns
+- Working with complex business logic
+
+<Warning>
+Pro models are slower and use more quota. Only switch to Pro when you truly need the additional reasoning power.
+</Warning>
+
+### Switch to Flash for Speed
+
+For simple, repetitive tasks that need quick responses:
+
+```bash
+/model
+# Select: Manual > gemini-3-flash-preview
+```
+
+**Use Flash when:**
+- Converting between data formats
+- Generating boilerplate code
+- Making simple text edits
+- Answering straightforward questions
+- Performing bulk, simple operations
+
+## Model Configuration
+
+You can configure your default model in several ways:
+
+### Command-Line Flag
+
+Specify a model when launching:
+
+```bash
+gemini --model gemini-2.5-flash
+```
+
+### Environment Variable
+
+Set a default in your shell profile:
+
+```bash
+export GEMINI_MODEL="gemini-2.5-pro"
+```
+
+### Settings File
+
+Configure in `~/.gemini/settings.json`:
+
+```json
+{
+  "model": {
+    "name": "auto"
+  }
+}
+```
+
+### Precedence Order
+
+When multiple configurations exist, they're applied in this order:
+
+1. **`--model` flag** (highest priority)
+2. **`GEMINI_MODEL` environment variable**
+3. **`model.name` in settings.json**
+4. **Default** (`auto`)
+
+## Model Fallback
+
+Gemini CLI includes automatic model fallback for resilience:
+
+<Steps>
+  <Step title="Model Failure Detected">
+    If your selected model fails (quota exceeded, rate limiting, server errors), the CLI detects this automatically.
+  </Step>
+  
+  <Step title="User Confirmation">
+    You're prompted to switch to a fallback model (unless configured for silent fallback).
+  </Step>
+  
+  <Step title="Automatic Switch">
+    If approved, the CLI uses an available fallback model to continue your session without interruption.
+  </Step>
+</Steps>
+
+<Info>
+Internal utility calls (prompt completion, classification) use silent fallback: `gemini-2.5-flash-lite` → `gemini-2.5-flash` → `gemini-2.5-pro` without changing your configured model.
+</Info>
+
+## Model Capabilities
+
+All Gemini models support:
+
+<CardGroup cols={2}>
+  <Card title="Multimodal Input" icon="images">
+    Process text, images, PDFs, and audio files as input
+  </Card>
+  <Card title="Tool Calling" icon="wrench">
+    Execute tools for file operations, shell commands, and web access
+  </Card>
+  <Card title="Long Context" icon="scroll">
+    Handle up to 1M tokens in Gemini 3 models
+  </Card>
+  <Card title="Code Generation" icon="code">
+    Generate, analyze, and modify code across multiple languages
+  </Card>
+</CardGroup>
+
+## Quota and Pricing
+
+### Free Tier (Google Login)
+
+When using Google Login (OAuth):
+
+- **60 requests/minute**
+- **1,000 requests/day**
+- Access to Gemini 3 models with 1M token context
+- No API key management required
+
+### Gemini API Key
+
+- **1,000 requests/day** (free tier)
+- Mix of Flash and Pro models
+- Usage-based billing available for higher limits
+- Model-specific pricing applies
+
+### Vertex AI
+
+- Enterprise features and compliance
+- Scalable with billing account
+- Higher rate limits
+- Integration with Google Cloud
+
+<Tip>
+Check your current usage with `/stats model` to see requests, tokens, and quota information.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="How It Works" href="/concepts/how-it-works" icon="diagram-project">
+    Understand the architecture and request flow
+  </Card>
+  <Card title="Tools" href="/concepts/tools" icon="wrench">
+    Learn about available tools and how to use them
+  </Card>
+  <Card title="Configuration" href="/reference/configuration" icon="gear">
+    Explore all configuration options
+  </Card>
+  <Card title="Authentication" href="/get-started/authentication" icon="key">
+    Set up different authentication methods
+  </Card>
+</CardGroup>

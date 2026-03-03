@@ -1,0 +1,442 @@
+---
+title: Sandboxed Execution
+description: Isolate AI operations from your host system for security and safety
+---
+
+Sandboxing isolates potentially dangerous operations—such as shell commands or file modifications—from your host system, providing a security barrier between AI operations and your environment.
+
+## Benefits of Sandboxing
+
+<CardGroup cols={2}>
+  <Card title="Security" icon="shield-halved">
+    Prevent accidental system damage or data loss from AI-generated commands.
+  </Card>
+  <Card title="Isolation" icon="box">
+    Limit file system access to the project directory only.
+  </Card>
+  <Card title="Consistency" icon="check-double">
+    Ensure reproducible environments across different systems.
+  </Card>
+  <Card title="Safety" icon="triangle-exclamation">
+    Reduce risk when working with untrusted code or experimental commands.
+  </Card>
+</CardGroup>
+
+<Warning>
+Sandboxing reduces but does not eliminate all risks. Always use the most restrictive profile that allows your work.
+</Warning>
+
+## Prerequisites
+
+Before using sandboxing, install and verify Gemini CLI:
+
+```bash
+npm install -g @google/gemini-cli
+gemini --version
+```
+
+## Sandboxing Methods
+
+Choose the method that best fits your platform and container solution.
+
+<Tabs>
+  <Tab title="macOS Seatbelt">
+    ### macOS Seatbelt (macOS only)
+
+    Lightweight, built-in sandboxing using `sandbox-exec`.
+
+    **Default Profile:** `permissive-open`
+    - Restricts writes outside project directory
+    - Allows most other operations
+    - No additional installation required
+
+    **Pros:**
+    - Native macOS integration
+    - No container overhead
+    - Fast startup
+
+    **Cons:**
+    - macOS only
+    - Less isolation than containers
+  </Tab>
+  <Tab title="Docker/Podman">
+    ### Container-based (Docker/Podman)
+
+    Cross-platform sandboxing with complete process isolation.
+
+    **Requirements:**
+    - Docker or Podman installed
+    - Sandbox image built locally or from registry
+
+    **Pros:**
+    - Complete process isolation
+    - Cross-platform support
+    - Customizable environment
+
+    **Cons:**
+    - Requires container runtime
+    - Slightly slower startup
+    - Additional disk space
+
+    <Note>
+    Container overhead is minimal after first build. GUI applications may not work in sandboxes.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Quickstart
+
+### Command Flag
+
+Enable sandboxing for a single session:
+
+```bash
+gemini -s -p "analyze the code structure"
+```
+
+or
+
+```bash
+gemini --sandbox -p "run the test suite"
+```
+
+### Environment Variable
+
+<CodeGroup>
+```bash macOS/Linux
+export GEMINI_SANDBOX=true
+gemini -p "run the test suite"
+```
+
+```bash Specific Method (macOS/Linux)
+export GEMINI_SANDBOX=docker
+gemini -p "analyze dependencies"
+```
+
+```powershell Windows (PowerShell)
+$env:GEMINI_SANDBOX="true"
+gemini -p "run the test suite"
+```
+
+```powershell Specific Method (Windows)
+$env:GEMINI_SANDBOX="podman"
+gemini -p "analyze dependencies"
+```
+</CodeGroup>
+
+**Valid values:**
+- `true` - Auto-detect method
+- `docker` - Use Docker
+- `podman` - Use Podman
+- `sandbox-exec` - Use macOS Seatbelt
+
+### Settings File
+
+Enable permanently in `settings.json`:
+
+```json
+{
+  "tools": {
+    "sandbox": "docker"
+  }
+}
+```
+
+or simply:
+
+```json
+{
+  "tools": {
+    "sandbox": true
+  }
+}
+```
+
+## Configuration
+
+### Precedence Order
+
+Settings are applied in this order (highest to lowest priority):
+
+1. **Command flag:** `-s` or `--sandbox`
+2. **Environment variable:** `GEMINI_SANDBOX=true|docker|podman|sandbox-exec`
+3. **Settings file:** `"sandbox": true` in `tools` object
+
+### macOS Seatbelt Profiles
+
+Set profile via `SEATBELT_PROFILE` environment variable:
+
+<AccordionGroup>
+  <Accordion title="permissive-open (default)">
+    - Write restrictions outside project
+    - Network allowed
+    - Good for general development
+  </Accordion>
+
+  <Accordion title="permissive-proxied">
+    - Write restrictions outside project
+    - Network via proxy only
+    - Use when you need proxy control
+  </Accordion>
+
+  <Accordion title="restrictive-open">
+    - Strict restrictions on file operations
+    - Network allowed
+    - Recommended for untrusted code
+  </Accordion>
+
+  <Accordion title="restrictive-proxied">
+    - Strict restrictions on file operations
+    - Network via proxy only
+    - High security with proxy control
+  </Accordion>
+
+  <Accordion title="strict-open">
+    - Read and write restrictions
+    - Network allowed
+    - Maximum file safety
+  </Accordion>
+
+  <Accordion title="strict-proxied">
+    - Read and write restrictions
+    - Network via proxy only
+    - Maximum security
+  </Accordion>
+</AccordionGroup>
+
+**Usage:**
+
+<CodeGroup>
+```bash macOS/Linux
+export SEATBELT_PROFILE=restrictive-open
+gemini -s
+```
+
+```powershell Windows (PowerShell)
+$env:SEATBELT_PROFILE="restrictive-open"
+gemini -s
+```
+</CodeGroup>
+
+### Custom Sandbox Flags
+
+Inject custom flags into `docker` or `podman` commands using `SANDBOX_FLAGS`.
+
+<CodeGroup>
+```bash macOS/Linux - Single Flag
+export SANDBOX_FLAGS="--security-opt label=disable"
+```
+
+```bash macOS/Linux - Multiple Flags
+export SANDBOX_FLAGS="--flag1 --flag2=value"
+```
+
+```powershell Windows - Single Flag
+$env:SANDBOX_FLAGS="--security-opt label=disable"
+```
+
+```powershell Windows - Multiple Flags
+$env:SANDBOX_FLAGS="--flag1 --flag2=value"
+```
+</CodeGroup>
+
+**Example Use Cases:**
+- Disable SELinux labeling (Podman)
+- Add volume mounts
+- Configure network settings
+- Set resource limits
+
+### Linux UID/GID Handling
+
+The sandbox automatically handles user permissions on Linux. Override with:
+
+<CodeGroup>
+```bash macOS/Linux - Force Host UID/GID
+export SANDBOX_SET_UID_GID=true
+```
+
+```bash macOS/Linux - Disable Mapping
+export SANDBOX_SET_UID_GID=false
+```
+
+```powershell Windows - Force Host UID/GID
+$env:SANDBOX_SET_UID_GID="true"
+```
+
+```powershell Windows - Disable Mapping
+$env:SANDBOX_SET_UID_GID="false"
+```
+</CodeGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title='"Operation not permitted" error'>
+    **Cause:** Operation requires access outside sandbox boundaries.
+
+    **Solutions:**
+    - Try a more permissive profile (e.g., `permissive-open` instead of `strict-open`)
+    - Add mount points for required directories
+    - Check if the operation is necessary for your use case
+  </Accordion>
+
+  <Accordion title="Missing commands in sandbox">
+    **Cause:** Command not installed in sandbox environment.
+
+    **Solutions:**
+    - Add to custom Dockerfile for container-based sandboxing
+    - Install via `sandbox.bashrc` configuration
+    - Verify the command is available on the host
+  </Accordion>
+
+  <Accordion title="Network issues">
+    **Cause:** Sandbox profile blocks network or proxy misconfiguration.
+
+    **Solutions:**
+    - Verify profile allows network (e.g., `-open` profiles)
+    - Check proxy configuration if using `-proxied` profiles
+    - Test network connectivity: `gemini -s -p "run shell command: ping -c 1 google.com"`
+  </Accordion>
+
+  <Accordion title="File permission errors">
+    **Cause:** UID/GID mismatch between host and container.
+
+    **Solutions:**
+    - Set `SANDBOX_SET_UID_GID=true` to force host UID/GID
+    - Check file ownership on host
+    - Verify container user has correct permissions
+  </Accordion>
+
+  <Accordion title="Sandbox not starting">
+    **Cause:** Container runtime not available or misconfigured.
+
+    **Solutions:**
+    - Verify Docker/Podman is installed: `docker --version` or `podman --version`
+    - Check container service is running
+    - Build sandbox image if using custom image
+    - Try different sandbox method: `GEMINI_SANDBOX=sandbox-exec` (macOS)
+  </Accordion>
+</AccordionGroup>
+
+## Debug Mode
+
+Enable detailed logging for troubleshooting:
+
+```bash
+DEBUG=1 gemini -s -p "debug command"
+```
+
+<Note>
+If you have `DEBUG=true` in a project's `.env` file, it won't affect Gemini CLI due to automatic exclusion. Use `.gemini/.env` files for Gemini CLI-specific debug settings.
+</Note>
+
+### Inspect Sandbox Environment
+
+<CodeGroup>
+```bash Check Environment Variables
+gemini -s -p "run shell command: env | grep SANDBOX"
+```
+
+```bash List Mounted Volumes
+gemini -s -p "run shell command: mount | grep workspace"
+```
+
+```bash Check User Permissions
+gemini -s -p "run shell command: id"
+```
+
+```bash Verify Network Access
+gemini -s -p "run shell command: curl -I https://google.com"
+```
+</CodeGroup>
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Untrusted Code" icon="bug">
+    Run and test code from unknown sources without risking your system.
+  </Card>
+  <Card title="Experimental Commands" icon="flask">
+    Try potentially destructive commands safely in isolation.
+  </Card>
+  <Card title="Production Testing" icon="server">
+    Test deployment scripts without affecting production environments.
+  </Card>
+  <Card title="CI/CD Integration" icon="gears">
+    Consistent, isolated environments for automated workflows.
+  </Card>
+</CardGroup>
+
+## Security Notes
+
+<Warning>
+**Important Security Considerations:**
+
+- Sandboxing reduces but does **not eliminate** all risks
+- Use the **most restrictive profile** that allows your work
+- **Container overhead** is minimal after first build
+- **GUI applications** may not work in sandboxes
+- **Network isolation** varies by profile—choose carefully
+- Always **review AI-generated commands** before approval, even in sandbox
+</Warning>
+
+## Configuration Examples
+
+### Basic Docker Sandbox
+
+```json
+{
+  "tools": {
+    "sandbox": "docker"
+  }
+}
+```
+
+### Restrictive macOS Setup
+
+```bash
+export SEATBELT_PROFILE=restrictive-proxied
+export GEMINI_SANDBOX=sandbox-exec
+gemini
+```
+
+### Custom Podman with Security Options
+
+```bash
+export GEMINI_SANDBOX=podman
+export SANDBOX_FLAGS="--security-opt label=disable --memory=2g"
+gemini -p "analyze project"
+```
+
+### Development Setup with UID Mapping
+
+```bash
+export GEMINI_SANDBOX=docker
+export SANDBOX_SET_UID_GID=true
+gemini
+```
+
+## Related Documentation
+
+<CardGroup cols={3}>
+  <Card title="Configuration" icon="gear" href="configuration">
+    Full configuration options for Gemini CLI
+  </Card>
+  <Card title="Commands" icon="terminal" href="commands">
+    Available slash commands and usage
+  </Card>
+  <Card title="Checkpointing" icon="floppy-disk" href="checkpointing">
+    Combine with checkpoints for double safety
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Enable Sandboxing" icon="shield">
+    Choose your method and add to `settings.json`
+  </Card>
+  <Card title="Test Your Setup" icon="vial">
+    Run a simple command to verify: `gemini -s -p "run shell command: echo test"`
+  </Card>
+</CardGroup>

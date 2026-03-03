@@ -1,0 +1,378 @@
+---
+title: Configuration
+description: Configure Gemini CLI with settings files and the /settings command
+---
+
+Control your Gemini CLI experience through the `/settings` command or by editing `settings.json` files directly. Settings control UI behavior, model parameters, security policies, and more.
+
+## Configuration Files
+
+Settings are stored in `settings.json` files at two levels:
+
+<CardGroup cols={2}>
+  <Card title="User Settings" icon="user">
+    **Location:** `~/.gemini/settings.json`
+    
+    Global settings that apply to all projects.
+  </Card>
+  <Card title="Workspace Settings" icon="folder">
+    **Location:** `<project>/.gemini/settings.json`
+    
+    Project-specific settings that override user settings.
+  </Card>
+</CardGroup>
+
+<Info>
+Workspace settings take precedence over user settings.
+</Info>
+
+## Managing Settings
+
+### Using the `/settings` Command
+
+The recommended way to manage settings is through the interactive editor:
+
+```bash
+/settings
+```
+
+The editor provides:
+- Browse or search for specific settings
+- View current values with descriptions
+- Validation to prevent errors
+- Immediate or restart-required change notifications
+
+### Manual Editing
+
+You can also edit `settings.json` files directly with any text editor:
+
+```json
+{
+  "general": {
+    "vimMode": true,
+    "defaultApprovalMode": "auto_edit"
+  },
+  "ui": {
+    "hideBanner": false,
+    "showLineNumbers": true
+  },
+  "model": {
+    "name": "gemini-2.0-flash",
+    "maxSessionTurns": 100
+  }
+}
+```
+
+## Settings Reference
+
+Below is a comprehensive list of all available settings grouped by category.
+
+### General
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `general.vimMode` | boolean | Enable Vim keybindings | `false` |
+| `general.defaultApprovalMode` | string | Default approval mode: `default`, `auto_edit`, `plan` | `"default"` |
+| `general.enableAutoUpdate` | boolean | Enable automatic updates | `true` |
+| `general.enableNotifications` | boolean | Enable notifications for action-required prompts (macOS only) | `false` |
+| `general.maxAttempts` | number | Maximum attempts for chat model requests (max 10) | `10` |
+| `general.debugKeystrokeLogging` | boolean | Log keystrokes to console for debugging | `false` |
+
+#### Plan Mode
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `general.plan.directory` | string | Directory for planning artifacts | `undefined` |
+| `general.plan.modelRouting` | boolean | Auto-switch between Pro/Flash for plan/implementation | `true` |
+
+#### Session Retention
+
+<Info>
+See [Session Management](sessions#session-retention) for detailed information on retention policies.
+</Info>
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `general.sessionRetention.enabled` | boolean | Enable automatic session cleanup | `true` |
+| `general.sessionRetention.maxAge` | string | Delete chats older than this (e.g., "30d", "7d", "24h") | `"30d"` |
+
+### Output
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `output.format` | string | Output format: `text` or `json` | `"text"` |
+
+### UI
+
+#### Appearance
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `ui.autoThemeSwitching` | boolean | Auto-switch light/dark themes based on terminal background | `true` |
+| `ui.terminalBackgroundPollingInterval` | number | Seconds between terminal background color polls | `60` |
+| `ui.hideWindowTitle` | boolean | Hide window title bar | `false` |
+| `ui.hideBanner` | boolean | Hide application banner | `false` |
+| `ui.hideFooter` | boolean | Hide footer from UI | `false` |
+| `ui.useBackgroundColor` | boolean | Use background colors in UI | `true` |
+| `ui.useAlternateBuffer` | boolean | Use alternate screen buffer (preserves shell history) | `false` |
+| `ui.incrementalRendering` | boolean | Reduce flickering (requires `useAlternateBuffer`) | `true` |
+| `ui.showSpinner` | boolean | Show spinner during operations | `true` |
+
+#### Content Display
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `ui.inlineThinkingMode` | string | Display model thinking inline: `off` or `full` | `"off"` |
+| `ui.showStatusInTitle` | boolean | Show model thoughts in window title | `false` |
+| `ui.dynamicWindowTitle` | boolean | Update title with status icons (◇/✋/✦) | `true` |
+| `ui.showLineNumbers` | boolean | Show line numbers in chat | `true` |
+| `ui.showCitations` | boolean | Show citations for generated text | `false` |
+| `ui.showModelInfoInChat` | boolean | Show model name for each turn | `false` |
+| `ui.showUserIdentity` | boolean | Show logged-in user's identity | `true` |
+| `ui.showMemoryUsage` | boolean | Display memory usage information | `false` |
+| `ui.loadingPhrases` | string | What to show while working: `tips`, `witty`, `both`, or `nothing` | `"tips"` |
+| `ui.errorVerbosity` | string | Error display: `low` (hide recoverable) or `full` | `"low"` |
+
+#### UI Elements
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `ui.hideTips` | boolean | Hide helpful tips | `false` |
+| `ui.showShortcutsHint` | boolean | Show "? for shortcuts" hint | `true` |
+| `ui.hideContextSummary` | boolean | Hide GEMINI.md/MCP context summary | `false` |
+| `ui.showHomeDirectoryWarning` | boolean | Warn when running in home directory | `true` |
+| `ui.showCompatibilityWarnings` | boolean | Show terminal/OS compatibility warnings | `true` |
+
+#### Footer Settings
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `ui.footer.hideCWD` | boolean | Hide current working directory path | `false` |
+| `ui.footer.hideSandboxStatus` | boolean | Hide sandbox status indicator | `false` |
+| `ui.footer.hideModelInfo` | boolean | Hide model name and context usage | `false` |
+| `ui.footer.hideContextPercentage` | boolean | Hide context window percentage | `true` |
+
+#### Accessibility
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `ui.accessibility.screenReader` | boolean | Plain-text output for screen readers | `false` |
+
+### IDE
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `ide.enabled` | boolean | Enable IDE integration mode | `false` |
+
+### Billing
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `billing.overageStrategy` | string | Quota exhaustion handling: `ask`, `always`, `never` | `"ask"` |
+
+### Model
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `model.name` | string | Gemini model for conversations | `undefined` |
+| `model.maxSessionTurns` | number | Max user/model/tool turns (-1 = unlimited) | `-1` |
+| `model.compressionThreshold` | number | Context usage fraction to trigger compression (0.0-1.0) | `0.5` |
+| `model.disableLoopDetection` | boolean | Disable infinite loop detection | `false` |
+| `model.skipNextSpeakerCheck` | boolean | Skip next speaker check | `true` |
+
+<Tip>
+Set `model.maxSessionTurns` to limit context window size and control costs. See [Session Management](sessions#session-limits) for details.
+</Tip>
+
+### Context
+
+#### Memory Discovery
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `context.discoveryMaxDirs` | number | Max directories to search for GEMINI.md | `200` |
+| `context.loadMemoryFromIncludeDirectories` | boolean | Scan include directories for GEMINI.md | `false` |
+
+#### File Filtering
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `context.fileFiltering.respectGitIgnore` | boolean | Respect .gitignore files | `true` |
+| `context.fileFiltering.respectGeminiIgnore` | boolean | Respect .geminiignore files | `true` |
+| `context.fileFiltering.enableRecursiveFileSearch` | boolean | Recursive search for @ references | `true` |
+| `context.fileFiltering.enableFuzzySearch` | boolean | Fuzzy search when searching files | `true` |
+| `context.fileFiltering.customIgnoreFilePaths` | array | Additional ignore files (highest precedence) | `[]` |
+
+### Tools
+
+#### Shell
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `tools.shell.enableInteractiveShell` | boolean | Use node-pty for interactive shell | `true` |
+| `tools.shell.showColor` | boolean | Show color in shell output | `false` |
+
+#### Tool Behavior
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `tools.useRipgrep` | boolean | Use ripgrep for faster content search | `true` |
+| `tools.truncateToolOutputThreshold` | number | Max characters before truncation (0 = disabled) | `40000` |
+| `tools.disableLLMCorrection` | boolean | Disable LLM error correction for edit tools | `true` |
+
+<Info>
+See [Sandboxing](sandbox) for sandbox-specific configuration.
+</Info>
+
+### Security
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `security.disableYoloMode` | boolean | Disable YOLO mode even if flagged | `false` |
+| `security.enablePermanentToolApproval` | boolean | Enable "Allow for all future sessions" option | `false` |
+| `security.blockGitExtensions` | boolean | Block installing/loading extensions from Git | `false` |
+| `security.allowedExtensions` | array | Regex patterns for allowed extensions (overrides blockGitExtensions) | `[]` |
+| `security.folderTrust.enabled` | boolean | Enable folder trust tracking | `true` |
+| `security.environmentVariableRedaction.enabled` | boolean | Redact environment variables with secrets | `false` |
+| `security.enableConseca` | boolean | Enable context-aware security checker (LLM-based) | `false` |
+
+### Advanced
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `advanced.autoConfigureMemory` | boolean | Auto-configure Node.js memory limits | `false` |
+
+### Experimental
+
+<Warning>
+Experimental features may change or be removed in future versions.
+</Warning>
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `experimental.toolOutputMasking.enabled` | boolean | Enable tool output masking to save tokens | `true` |
+| `experimental.useOSC52Paste` | boolean | Use OSC 52 for pasting (remote sessions) | `false` |
+| `experimental.useOSC52Copy` | boolean | Use OSC 52 for copying (remote sessions) | `false` |
+| `experimental.plan` | boolean | Enable Plan Mode and planning tools | `false` |
+| `experimental.modelSteering` | boolean | Enable user hints to guide model | `false` |
+| `experimental.directWebFetch` | boolean | Web fetch without LLM summarization | `false` |
+| `experimental.gemmaModelRouter.enabled` | boolean | Enable Gemma Model Router (requires local endpoint) | `false` |
+
+### Skills
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `skills.enabled` | boolean | Enable Agent Skills | `true` |
+
+### Hooks
+
+| Setting | Type | Description | Default |
+|---------|------|-------------|----------|
+| `hooksConfig.enabled` | boolean | Master toggle for hooks system | `true` |
+| `hooksConfig.notifications` | boolean | Show visual indicators when hooks execute | `true` |
+
+## Example Configurations
+
+### Minimal Setup
+
+```json
+{
+  "model": {
+    "name": "gemini-2.0-flash"
+  }
+}
+```
+
+### Productivity Setup
+
+```json
+{
+  "general": {
+    "vimMode": true,
+    "defaultApprovalMode": "auto_edit"
+  },
+  "ui": {
+    "hideWindowTitle": true,
+    "showLineNumbers": true,
+    "inlineThinkingMode": "full"
+  },
+  "model": {
+    "maxSessionTurns": 150
+  },
+  "tools": {
+    "sandbox": "docker"
+  }
+}
+```
+
+### Security-Focused
+
+```json
+{
+  "general": {
+    "defaultApprovalMode": "default"
+  },
+  "security": {
+    "disableYoloMode": true,
+    "blockGitExtensions": true,
+    "folderTrust.enabled": true,
+    "enableConseca": true
+  },
+  "tools": {
+    "sandbox": "restrictive-open",
+    "disableLLMCorrection": true
+  }
+}
+```
+
+## Hierarchical Memory (GEMINI.md)
+
+The `/memory` command manages hierarchical instructional context from `GEMINI.md` files.
+
+### File Locations
+
+GEMINI.md files are loaded from:
+
+1. **Global:** `~/.gemini/GEMINI.md`
+2. **Project ancestors:** All parent directories up to project root
+3. **Current directory:** `./GEMINI.md`
+4. **Sub-directories:** When configured
+
+### Commands
+
+```bash
+/memory list       # List paths of loaded GEMINI.md files
+/memory show       # Display full concatenated content
+/memory refresh    # Reload from all locations
+/memory add <text> # Add text to memory
+```
+
+### Configuration
+
+Control memory loading behavior:
+
+```json
+{
+  "context": {
+    "discoveryMaxDirs": 200,
+    "loadMemoryFromIncludeDirectories": false
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Commands Overview" icon="terminal" href="commands">
+    Explore all available commands
+  </Card>
+  <Card title="Session Management" icon="clock-rotate-left" href="sessions">
+    Configure session retention and limits
+  </Card>
+  <Card title="Checkpointing" icon="floppy-disk" href="checkpointing">
+    Enable automatic checkpoints
+  </Card>
+  <Card title="Sandboxing" icon="shield" href="sandbox">
+    Configure sandboxed execution
+  </Card>
+</CardGroup>

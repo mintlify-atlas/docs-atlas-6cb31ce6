@@ -1,0 +1,465 @@
+---
+title: Authentication
+description: Set up authentication for Gemini CLI using OAuth, Gemini API key, or Vertex AI
+---
+
+## Overview
+
+To use Gemini CLI, you need to authenticate with Google. This guide helps you choose the best authentication method based on your account type and use case.
+
+<Info>
+  **Quick Start:** Most users should start with [Login with Google](#login-with-google) for the simplest setup.
+</Info>
+
+## Choose Your Authentication Method
+
+Select the method that matches your situation:
+
+| User Type / Scenario | Recommended Method | Google Cloud Project Required |
+| :--- | :--- | :--- |
+| Individual Google accounts | [Login with Google](#login-with-google) | No, with exceptions |
+| Organization users (company, school, Workspace) | [Login with Google](#login-with-google) | [Yes](#set-google-cloud-project) |
+| AI Studio user with Gemini API key | [Use Gemini API Key](#gemini-api-key) | No |
+| Google Cloud Vertex AI user | [Vertex AI](#vertex-ai) | [Yes](#set-google-cloud-project) |
+| Headless/non-interactive mode | [API Key](#gemini-api-key) or [Vertex AI](#vertex-ai) | Depends on method |
+
+### Account Types Explained
+
+<Tabs>
+  <Tab title="Individual Accounts">
+    **Individual Google accounts** include:
+    - Free tier accounts (Gemini Code Assist for individuals)
+    - Paid subscriptions (Google AI Pro and Ultra)
+    - Personal Gmail accounts
+    
+    **Free tier benefits:**
+    - 60 requests/min
+    - 1,000 requests/day
+  </Tab>
+  <Tab title="Organization Accounts">
+    **Organization accounts** include:
+    - Company or school accounts
+    - Google Workspace accounts
+    - Google AI Ultra for Business subscriptions
+    - Gemini Code Assist enterprise licenses
+    
+    **Note:** Requires Google Cloud Project configuration
+  </Tab>
+</Tabs>
+
+## Login with Google
+
+The simplest authentication method for local development. Requires a web browser that can communicate with your terminal.
+
+<Steps>
+  <Step title="Start Gemini CLI">
+    ```bash
+    gemini
+    ```
+  </Step>
+  <Step title="Select Login with Google">
+    When prompted "How would you like to authenticate for this project?", select **Login with Google**.
+    
+    Gemini CLI will open a login prompt in your web browser.
+  </Step>
+  <Step title="Follow Authentication Flow">
+    Follow the on-screen instructions in your browser to sign in with your Google account.
+    
+    Your credentials will be cached locally for future sessions.
+  </Step>
+</Steps>
+
+<Note>
+  **Google AI Pro/Ultra subscribers:** Use the Google account associated with your subscription.
+</Note>
+
+### Do I Need a Google Cloud Project?
+
+Most individual accounts don't require a Google Cloud project. However, you'll need one if:
+
+- You're using a company, school, or Google Workspace account
+- You have a Gemini Code Assist license from the Google Developer Program
+- You have a Gemini Code Assist subscription
+
+If you need to set a Google Cloud project, see [Set Your Google Cloud Project](#set-google-cloud-project).
+
+## Gemini API Key
+
+Use an API key from Google AI Studio if you prefer not to authenticate with your Google account directly.
+
+<Steps>
+  <Step title="Obtain API Key">
+    Get your API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+  </Step>
+  <Step title="Set Environment Variable">
+    <CodeGroup>
+    
+    ```bash macOS/Linux
+    # Replace YOUR_GEMINI_API_KEY with your actual key
+    export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+    ```
+    
+    ```powershell Windows (PowerShell)
+    # Replace YOUR_GEMINI_API_KEY with your actual key
+    $env:GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+    ```
+    
+    </CodeGroup>
+    
+    To make this persistent, see [Persisting Environment Variables](#persisting-environment-variables).
+  </Step>
+  <Step title="Start Gemini CLI">
+    ```bash
+    gemini
+    ```
+    
+    Select **Use Gemini API key** when prompted.
+  </Step>
+</Steps>
+
+<Warning>
+  Treat API keys as sensitive credentials. Protect them to prevent unauthorized access and potential misuse of the service under your account.
+</Warning>
+
+### API Key Benefits
+
+- **Free tier:** 1000 requests/day with Gemini 3 (mix of flash and pro)
+- **Model selection:** Choose specific Gemini models
+- **Usage-based billing:** Upgrade for higher limits when needed
+
+## Vertex AI
+
+For enterprise teams and production workloads using Google Cloud's Vertex AI platform.
+
+<Info>
+  All Vertex AI authentication methods require setting `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION`.
+</Info>
+
+### Prerequisites
+
+Set required environment variables for all Vertex AI methods:
+
+<CodeGroup>
+
+```bash macOS/Linux
+# Replace with your project ID and desired location (e.g., us-central1)
+export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"
+export GOOGLE_CLOUD_LOCATION="YOUR_PROJECT_LOCATION"
+```
+
+```powershell Windows (PowerShell)
+# Replace with your project ID and desired location (e.g., us-central1)
+$env:GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"
+$env:GOOGLE_CLOUD_LOCATION="YOUR_PROJECT_LOCATION"
+```
+
+</CodeGroup>
+
+### Method A: Application Default Credentials (ADC)
+
+Best if you have Google Cloud CLI installed.
+
+<Steps>
+  <Step title="Unset Conflicting Variables">
+    If you previously set `GOOGLE_API_KEY` or `GEMINI_API_KEY`, unset them:
+    
+    <CodeGroup>
+    
+    ```bash macOS/Linux
+    unset GOOGLE_API_KEY GEMINI_API_KEY
+    ```
+    
+    ```powershell Windows (PowerShell)
+    Remove-Item Env:\GOOGLE_API_KEY, Env:\GEMINI_API_KEY -ErrorAction Ignore
+    ```
+    
+    </CodeGroup>
+  </Step>
+  <Step title="Verify Google Cloud Setup">
+    Ensure you have a Google Cloud project with Vertex AI API enabled.
+  </Step>
+  <Step title="Login to Google Cloud">
+    ```bash
+    gcloud auth application-default login
+    ```
+  </Step>
+  <Step title="Configure Project">
+    See [Set Your Google Cloud Project](#set-google-cloud-project).
+  </Step>
+  <Step title="Start Gemini CLI">
+    ```bash
+    gemini
+    ```
+    
+    Select **Vertex AI** when prompted.
+  </Step>
+</Steps>
+
+### Method B: Service Account JSON Key
+
+Ideal for non-interactive environments, CI/CD pipelines, or restricted environments.
+
+<Steps>
+  <Step title="Unset Conflicting Variables">
+    <CodeGroup>
+    
+    ```bash macOS/Linux
+    unset GOOGLE_API_KEY GEMINI_API_KEY
+    ```
+    
+    ```powershell Windows (PowerShell)
+    Remove-Item Env:\GOOGLE_API_KEY, Env:\GEMINI_API_KEY -ErrorAction Ignore
+    ```
+    
+    </CodeGroup>
+  </Step>
+  <Step title="Create Service Account">
+    [Create a service account and key](https://cloud.google.com/iam/docs/keys-create-delete) and download the JSON file.
+    
+    Assign the **Vertex AI User** role to the service account.
+  </Step>
+  <Step title="Set Credentials Path">
+    <CodeGroup>
+    
+    ```bash macOS/Linux
+    # Replace /path/to/your/keyfile.json with the actual path
+    export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/keyfile.json"
+    ```
+    
+    ```powershell Windows (PowerShell)
+    # Replace C:\path\to\your\keyfile.json with the actual path
+    $env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\your\keyfile.json"
+    ```
+    
+    </CodeGroup>
+  </Step>
+  <Step title="Configure Project">
+    See [Set Your Google Cloud Project](#set-google-cloud-project).
+  </Step>
+  <Step title="Start Gemini CLI">
+    ```bash
+    gemini
+    ```
+    
+    Select **Vertex AI** when prompted.
+  </Step>
+</Steps>
+
+<Warning>
+  Protect your service account key file as it provides access to your Google Cloud resources.
+</Warning>
+
+### Method C: Google Cloud API Key
+
+<Steps>
+  <Step title="Obtain API Key">
+    [Get an API Key](https://cloud.google.com/vertex-ai/generative-ai/docs/start/api-keys?usertype=newuser) from Google Cloud.
+  </Step>
+  <Step title="Set Environment Variable">
+    <CodeGroup>
+    
+    ```bash macOS/Linux
+    # Replace YOUR_GOOGLE_API_KEY with your Vertex AI API key
+    export GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY"
+    ```
+    
+    ```powershell Windows (PowerShell)
+    # Replace YOUR_GOOGLE_API_KEY with your Vertex AI API key
+    $env:GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY"
+    ```
+    
+    </CodeGroup>
+  </Step>
+  <Step title="Configure Project">
+    See [Set Your Google Cloud Project](#set-google-cloud-project).
+  </Step>
+  <Step title="Start Gemini CLI">
+    ```bash
+    gemini
+    ```
+    
+    Select **Vertex AI** when prompted.
+  </Step>
+</Steps>
+
+<Note>
+  If you see errors like "API keys are not supported by this API...", your organization might restrict API key usage. Try other Vertex AI authentication methods instead.
+</Note>
+
+## Set Google Cloud Project
+
+Required for organization accounts and Vertex AI authentication.
+
+<Warning>
+  Most individual Google accounts (free and paid) don't require a Google Cloud project.
+</Warning>
+
+<Steps>
+  <Step title="Find Your Project ID">
+    [Find your Google Cloud Project ID](https://support.google.com/googleapi/answer/7014113) in the Google Cloud Console.
+  </Step>
+  <Step title="Enable Gemini API">
+    [Enable the Gemini for Cloud API](https://cloud.google.com/gemini/docs/discover/set-up-gemini#enable-api) for your project.
+  </Step>
+  <Step title="Configure IAM Access">
+    [Configure necessary IAM access permissions](https://cloud.google.com/gemini/docs/discover/set-up-gemini#grant-iam) for your user or service account.
+  </Step>
+  <Step title="Set Environment Variable">
+    <CodeGroup>
+    
+    ```bash macOS/Linux
+    # Replace YOUR_PROJECT_ID with your actual Google Cloud project ID
+    export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"
+    ```
+    
+    ```powershell Windows (PowerShell)
+    # Replace YOUR_PROJECT_ID with your actual Google Cloud project ID
+    $env:GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"
+    ```
+    
+    </CodeGroup>
+    
+    To make this persistent, see [Persisting Environment Variables](#persisting-environment-variables).
+  </Step>
+</Steps>
+
+<Info>
+  Gemini CLI checks for `GOOGLE_CLOUD_PROJECT` first, then falls back to `GOOGLE_CLOUD_PROJECT_ID`.
+</Info>
+
+## Persisting Environment Variables
+
+Avoid setting environment variables for every terminal session by persisting them:
+
+### Method 1: Shell Configuration File
+
+Add environment variables to your shell's startup file:
+
+<CodeGroup>
+
+```bash macOS/Linux (~/.bashrc, ~/.zshrc, ~/.profile)
+# Add to your shell config file
+echo 'export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"' >> ~/.bashrc
+echo 'export GEMINI_API_KEY="YOUR_API_KEY"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+```powershell Windows (PowerShell Profile)
+# Add to your PowerShell profile
+Add-Content -Path $PROFILE -Value '$env:GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"'
+Add-Content -Path $PROFILE -Value '$env:GEMINI_API_KEY="YOUR_API_KEY"'
+. $PROFILE
+```
+
+</CodeGroup>
+
+<Warning>
+  Any process launched from your shell can read environment variables exported in your shell configuration file.
+</Warning>
+
+### Method 2: .env File (Recommended)
+
+Create a `.gemini/.env` file in your project or home directory. Gemini CLI automatically loads variables from the first `.env` file it finds.
+
+<CodeGroup>
+
+```bash macOS/Linux
+# Create user-wide settings
+mkdir -p ~/.gemini
+cat >> ~/.gemini/.env <<'EOF'
+GOOGLE_CLOUD_PROJECT="your-project-id"
+GEMINI_API_KEY="your-api-key"
+# Add other variables as needed
+EOF
+```
+
+```powershell Windows (PowerShell)
+# Create user-wide settings
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.gemini"
+@"
+GOOGLE_CLOUD_PROJECT="your-project-id"
+GEMINI_API_KEY="your-api-key"
+# Add other variables as needed
+"@ | Out-File -FilePath "$env:USERPROFILE\.gemini\.env" -Encoding utf8 -Append
+```
+
+</CodeGroup>
+
+<Info>
+  Gemini CLI searches for `.env` files starting from the current directory, then up the directory tree, and finally in `~/.gemini/.env`.
+</Info>
+
+## Google Cloud Environments
+
+When running Gemini CLI in certain Google Cloud environments, authentication is automatic:
+
+<CardGroup cols={2}>
+  <Card title="Cloud Shell" icon="cloud">
+    Gemini CLI automatically authenticates using your Cloud Shell credentials.
+  </Card>
+  <Card title="Compute Engine" icon="server">
+    Gemini CLI automatically uses Application Default Credentials (ADC) from the environment's metadata server.
+  </Card>
+</CardGroup>
+
+If automatic authentication fails, use one of the interactive methods described above.
+
+## Headless Mode
+
+For [headless/non-interactive mode](/advanced/headless), Gemini CLI uses your existing authentication if credentials are cached.
+
+If you haven't logged in yet, you must configure authentication using environment variables:
+
+- [Use Gemini API Key](#gemini-api-key)
+- [Vertex AI Method B or C](#vertex-ai)
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Authentication failed">
+    - Verify your credentials are correct
+    - Check that required environment variables are set
+    - Ensure you've selected the correct authentication method
+    - Try clearing cached credentials and re-authenticating
+  </Accordion>
+  
+  <Accordion title="Google Cloud project errors">
+    - Verify the project ID is correct
+    - Ensure the Gemini for Cloud API is enabled
+    - Check that your account has the necessary IAM permissions
+    - Confirm `GOOGLE_CLOUD_PROJECT` is set correctly
+  </Accordion>
+  
+  <Accordion title="API key not working">
+    - Verify the API key is copied correctly (no extra spaces)
+    - Check that the API key hasn't expired or been revoked
+    - Ensure you're using the correct API key for your chosen method (Gemini API vs Vertex AI)
+    - For Vertex AI API keys, verify your organization allows API key usage
+  </Accordion>
+  
+  <Accordion title="Service account permissions">
+    - Ensure the service account has the "Vertex AI User" role
+    - Verify the JSON key file path is correct
+    - Check that the key file is readable by your user
+    - Confirm `GOOGLE_APPLICATION_CREDENTIALS` points to a valid JSON file
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick Start Guide"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get to your first working command in minutes
+  </Card>
+  <Card
+    title="Quotas and Pricing"
+    icon="chart-line"
+    href="/resources/quota-and-pricing"
+  >
+    Learn about quotas, pricing, and terms of service
+  </Card>
+</CardGroup>

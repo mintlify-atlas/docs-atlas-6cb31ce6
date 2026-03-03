@@ -1,0 +1,748 @@
+---
+title: Slash Commands
+description: Complete reference for all slash commands in Gemini CLI
+---
+
+Slash commands provide meta-level control over the CLI itself. These commands are prefixed with a forward slash (`/`) and can be used to manage your session, customize the interface, and control Gemini CLI behavior.
+
+## Built-in Commands
+
+### /about
+
+Show version info. Share this information when filing issues.
+
+```bash
+/about
+```
+
+### /auth
+
+Open a dialog that lets you change the authentication method.
+
+```bash
+/auth
+```
+
+### /bug
+
+File an issue about Gemini CLI. By default, the issue is filed within the GitHub repository for Gemini CLI.
+
+```bash
+/bug <issue-title>
+```
+
+<ParamField path="issue-title" type="string">
+  The headline for the bug being filed
+</ParamField>
+
+<Note>
+  The default `/bug` behavior can be modified using the `advanced.bugCommand` setting in your `.gemini/settings.json` file.
+</Note>
+
+### /chat
+
+Save and resume conversation history for branching conversation state interactively, or resuming a previous state from a later session.
+
+```bash
+/chat <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="debug" type="subcommand">
+  Export the most recent API request as a JSON payload
+</ParamField>
+
+<ParamField path="delete" type="subcommand">
+  Deletes a saved conversation checkpoint
+  
+  **Usage:** `/chat delete <tag>`
+</ParamField>
+
+<ParamField path="list" type="subcommand">
+  Lists available tags for chat state resumption
+  
+  <Note>
+    This command only lists chats saved within the current project. Because chat history is project-scoped, chats saved in other project directories will not be displayed.
+  </Note>
+</ParamField>
+
+<ParamField path="resume" type="subcommand">
+  Resumes a conversation from a previous save
+  
+  **Usage:** `/chat resume <tag>`
+  
+  <Note>
+    You can only resume chats that were saved within the current project. To resume a chat from a different project, you must run the Gemini CLI from that project's directory.
+  </Note>
+</ParamField>
+
+<ParamField path="save" type="subcommand">
+  Saves the current conversation history. You must add a `<tag>` for identifying the conversation state
+  
+  **Usage:** `/chat save <tag>`
+  
+  **Checkpoint locations:**
+  - Linux/macOS: `~/.gemini/tmp/<project_hash>/`
+  - Windows: `C:\Users\<YourUsername>\.gemini\tmp\<project_hash>\`
+  
+  <Note>
+    Chats are saved into a project-specific directory, determined by where you run the CLI. Consequently, saved chats are only accessible when working within that same project. These checkpoints are for manually saving and resuming conversation states. For automatic checkpoints created before file modifications, see the [Checkpointing documentation](/cli/checkpointing).
+  </Note>
+</ParamField>
+
+<ParamField path="share" type="subcommand">
+  Writes the current conversation to a provided Markdown or JSON file
+  
+  **Usage:** `/chat share [filename]`
+  
+  If no filename is provided, the CLI will generate one.
+</ParamField>
+
+### /clear
+
+Clear the terminal screen, including the visible session history and scrollback within the CLI.
+
+```bash
+/clear
+```
+
+<Tip>
+  **Keyboard shortcut:** Press **Ctrl+L** at any time to perform a clear action.
+</Tip>
+
+### /commands
+
+Manage custom slash commands loaded from `.toml` files.
+
+```bash
+/commands <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="reload" type="subcommand">
+  Reload custom command definitions from all sources (user-level `~/.gemini/commands/`, project-level `<project>/.gemini/commands/`, MCP prompts, and extensions)
+  
+  **Usage:** `/commands reload`
+  
+  Use this to pick up new or modified `.toml` files without restarting the CLI.
+</ParamField>
+
+### /compress
+
+Replace the entire chat context with a summary. This saves on tokens used for future tasks while retaining a high level summary of what has happened.
+
+```bash
+/compress
+```
+
+### /copy
+
+Copies the last output produced by Gemini CLI to your clipboard, for easy sharing or reuse.
+
+```bash
+/copy
+```
+
+**Behavior:**
+- Local sessions use system clipboard tools (pbcopy/xclip/clip)
+- Remote sessions (SSH/WSL) use OSC 52 and require terminal support
+
+<Warning>
+  This command requires platform-specific clipboard tools to be installed:
+  - **Linux:** Requires `xclip` or `xsel` (install using your system's package manager)
+  - **macOS:** Requires `pbcopy` (typically pre-installed)
+  - **Windows:** Requires `clip` (typically pre-installed)
+</Warning>
+
+### /directory (or /dir)
+
+Manage workspace directories for multi-directory support.
+
+```bash
+/directory <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="add" type="subcommand">
+  Add a directory to the workspace
+  
+  **Usage:** `/directory add <path1>,<path2>`
+  
+  The path can be absolute or relative to the current working directory. Moreover, the reference from home directory is supported as well.
+  
+  <Warning>
+    Disabled in restrictive sandbox profiles. If you're using that, use `--include-directories` when starting the session instead.
+  </Warning>
+</ParamField>
+
+<ParamField path="show" type="subcommand">
+  Display all directories added by `/directory add` and `--include-directories`
+  
+  **Usage:** `/directory show`
+</ParamField>
+
+### /docs
+
+Open the Gemini CLI documentation in your browser.
+
+```bash
+/docs
+```
+
+### /editor
+
+Open a dialog for selecting supported editors.
+
+```bash
+/editor
+```
+
+### /extensions
+
+Manage extensions. See [Gemini CLI Extensions](/extensions/overview).
+
+```bash
+/extensions <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="config" type="subcommand">
+  Configure extension settings
+</ParamField>
+
+<ParamField path="disable" type="subcommand">
+  Disable an extension
+</ParamField>
+
+<ParamField path="enable" type="subcommand">
+  Enable an extension
+</ParamField>
+
+<ParamField path="explore" type="subcommand">
+  Open extensions page in your browser
+</ParamField>
+
+<ParamField path="install" type="subcommand">
+  Install an extension from a git repo or local path
+</ParamField>
+
+<ParamField path="link" type="subcommand">
+  Link an extension from a local path
+</ParamField>
+
+<ParamField path="list" type="subcommand">
+  List active extensions
+</ParamField>
+
+<ParamField path="restart" type="subcommand">
+  Restart all extensions
+</ParamField>
+
+<ParamField path="uninstall" type="subcommand">
+  Uninstall an extension
+</ParamField>
+
+<ParamField path="update" type="subcommand">
+  Update extensions
+  
+  **Usage:** `/extensions update <extension-names>|--all`
+</ParamField>
+
+### /help (or /?)
+
+Display help information about Gemini CLI, including available commands and their usage.
+
+```bash
+/help
+```
+
+### /hooks
+
+Manage hooks, which allow you to intercept and customize Gemini CLI behavior at specific lifecycle events.
+
+```bash
+/hooks <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="disable-all" type="subcommand">
+  Disable all enabled hooks
+</ParamField>
+
+<ParamField path="disable" type="subcommand">
+  Disable a hook by name
+  
+  **Usage:** `/hooks disable <hook-name>`
+</ParamField>
+
+<ParamField path="enable-all" type="subcommand">
+  Enable all disabled hooks
+</ParamField>
+
+<ParamField path="enable" type="subcommand">
+  Enable a hook by name
+  
+  **Usage:** `/hooks enable <hook-name>`
+</ParamField>
+
+<ParamField path="list" type="subcommand">
+  Display all registered hooks with their status
+  
+  **Aliases:** `show`, `panel`
+</ParamField>
+
+### /ide
+
+Manage IDE integration.
+
+```bash
+/ide <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="disable" type="subcommand">
+  Disable IDE integration
+</ParamField>
+
+<ParamField path="enable" type="subcommand">
+  Enable IDE integration
+</ParamField>
+
+<ParamField path="install" type="subcommand">
+  Install required IDE companion
+</ParamField>
+
+<ParamField path="status" type="subcommand">
+  Check status of IDE integration
+</ParamField>
+
+### /init
+
+To help users easily create a `GEMINI.md` file, this command analyzes the current directory and generates a tailored context file, making it simpler for them to provide project-specific instructions to the Gemini agent.
+
+```bash
+/init
+```
+
+### /mcp
+
+Manage configured Model Context Protocol (MCP) servers.
+
+```bash
+/mcp <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="auth" type="subcommand">
+  Authenticate with an OAuth-enabled MCP server
+  
+  **Usage:** `/mcp auth <server-name>`
+  
+  If `<server-name>` is provided, it initiates the OAuth flow for that server. If no server name is provided, it lists all configured servers that support OAuth authentication.
+</ParamField>
+
+<ParamField path="desc" type="subcommand">
+  List configured MCP servers and tools with descriptions
+</ParamField>
+
+<ParamField path="disable" type="subcommand">
+  Disable an MCP server
+</ParamField>
+
+<ParamField path="enable" type="subcommand">
+  Enable a disabled MCP server
+</ParamField>
+
+<ParamField path="list" type="subcommand">
+  List configured MCP servers and tools
+  
+  **Alias:** `ls`
+  
+  This is the default action if no subcommand is specified.
+</ParamField>
+
+<ParamField path="refresh" type="subcommand">
+  Restarts all MCP servers and re-discovers their available tools
+</ParamField>
+
+<ParamField path="schema" type="subcommand">
+  List configured MCP servers and tools with descriptions and schemas
+</ParamField>
+
+### /memory
+
+Manage the AI's instructional context (hierarchical memory loaded from `GEMINI.md` files).
+
+```bash
+/memory <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="add" type="subcommand">
+  Adds the following text to the AI's memory
+  
+  **Usage:** `/memory add <text to remember>`
+</ParamField>
+
+<ParamField path="list" type="subcommand">
+  Lists the paths of the GEMINI.md files in use for hierarchical memory
+</ParamField>
+
+<ParamField path="refresh" type="subcommand">
+  Reload the hierarchical instructional memory from all `GEMINI.md` files found in the configured locations (global, project/ancestors, and sub-directories)
+  
+  This command updates the model with the latest `GEMINI.md` content.
+</ParamField>
+
+<ParamField path="show" type="subcommand">
+  Display the full, concatenated content of the current hierarchical memory that has been loaded from all `GEMINI.md` files
+  
+  This lets you inspect the instructional context being provided to the Gemini model.
+</ParamField>
+
+<Info>
+  For more details on how `GEMINI.md` files contribute to hierarchical memory, see the [Configuration documentation](/reference/gemini-md).
+</Info>
+
+### /model
+
+Manage model configuration.
+
+```bash
+/model <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="manage" type="subcommand">
+  Opens a dialog to configure the model
+</ParamField>
+
+<ParamField path="set" type="subcommand">
+  Set the model to use
+  
+  **Usage:** `/model set <model-name> [--persist]`
+</ParamField>
+
+### /permissions
+
+Manage folder trust settings and other permissions.
+
+```bash
+/permissions <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="trust" type="subcommand">
+  Manage folder trust settings
+  
+  **Usage:** `/permissions trust [<directory-path>]`
+</ParamField>
+
+### /plan
+
+Switch to Plan Mode (read-only) and view the current plan if one has been generated.
+
+```bash
+/plan
+```
+
+<Note>
+  This feature requires the `experimental.plan` setting to be enabled in your configuration.
+</Note>
+
+### /policies
+
+Manage policies.
+
+```bash
+/policies <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="list" type="subcommand">
+  List all active policies grouped by mode
+</ParamField>
+
+### /privacy
+
+Display the Privacy Notice and allow users to select whether they consent to the collection of their data for service improvement purposes.
+
+```bash
+/privacy
+```
+
+### /quit (or /exit)
+
+Exit Gemini CLI.
+
+```bash
+/quit
+```
+
+### /restore
+
+Restores the project files to the state they were in just before a tool was executed. This is particularly useful for undoing file edits made by a tool.
+
+```bash
+/restore [tool_call_id]
+```
+
+<ParamField path="tool_call_id" type="string" optional>
+  The ID of the tool call to restore from. If not provided, lists available checkpoints.
+</ParamField>
+
+<Note>
+  Only available if checkpointing is configured via [settings](/cli/configuration). See [Checkpointing documentation](/cli/checkpointing) for more details.
+</Note>
+
+### /resume
+
+Browse and resume previous conversation sessions. Opens an interactive session browser where you can search, filter, and select from automatically saved conversations.
+
+```bash
+/resume
+```
+
+**Features:**
+- **Management:** Delete unwanted sessions directly from the browser
+- **Resume:** Select any session to resume and continue the conversation
+- **Search:** Use `/` to search through conversation content across all sessions
+- **Session Browser:** Interactive interface showing all saved sessions with timestamps, message counts, and first user message for context
+- **Sorting:** Sort sessions by date or message count
+
+<Info>
+  All conversations are automatically saved as you chat - no manual saving required. See [Session Management](/cli/sessions) for complete details.
+</Info>
+
+### /rewind
+
+Navigates backward through the conversation history, letting you review past interactions and potentially revert both chat state and file changes.
+
+```bash
+/rewind
+```
+
+<Tip>
+  **Keyboard shortcut:** Press **Esc** twice quickly
+</Tip>
+
+**Features:**
+- **Select Interaction:** Preview user prompts and file changes
+- **Action Selection:** Choose to rewind history only, revert code changes only, or both
+
+### /settings
+
+Open the settings editor to view and modify Gemini CLI settings.
+
+```bash
+/settings
+```
+
+This command provides a user-friendly interface for changing settings that control the behavior and appearance of Gemini CLI. It is equivalent to manually editing the `.gemini/settings.json` file, but with validation and guidance to prevent errors.
+
+<Info>
+  See the [settings documentation](/reference/settings) for a full list of available settings. Changes to some settings are applied immediately, while others require a restart.
+</Info>
+
+### /setup-github
+
+Set up GitHub Actions to triage issues and review PRs with Gemini.
+
+```bash
+/setup-github
+```
+
+### /shells (or /bashes)
+
+Toggle the background shells view. This allows you to view and manage long-running processes that you've sent to the background.
+
+```bash
+/shells
+```
+
+### /skills
+
+Manage Agent Skills, which provide on-demand expertise and specialized workflows.
+
+```bash
+/skills <subcommand>
+```
+
+#### Subcommands
+
+<ParamField path="disable" type="subcommand">
+  Disable a specific skill by name
+  
+  **Usage:** `/skills disable <name>`
+</ParamField>
+
+<ParamField path="enable" type="subcommand">
+  Enable a specific skill by name
+  
+  **Usage:** `/skills enable <name>`
+</ParamField>
+
+<ParamField path="list" type="subcommand">
+  List all discovered skills and their current status (enabled/disabled)
+</ParamField>
+
+<ParamField path="reload" type="subcommand">
+  Refresh the list of discovered skills from all tiers (workspace, user, and extensions)
+</ParamField>
+
+### /stats
+
+Display detailed statistics for the current Gemini CLI session.
+
+```bash
+/stats [subcommand]
+```
+
+#### Subcommands
+
+<ParamField path="session" type="subcommand" default>
+  Show session-specific usage statistics, including duration, tool calls, and performance metrics
+  
+  This is the default view.
+</ParamField>
+
+<ParamField path="model" type="subcommand">
+  Show model-specific usage statistics, including token counts and quota information
+</ParamField>
+
+<ParamField path="tools" type="subcommand">
+  Show tool-specific usage statistics
+</ParamField>
+
+### /terminal-setup
+
+Configure terminal keybindings for multiline input (VS Code, Cursor, Windsurf).
+
+```bash
+/terminal-setup
+```
+
+### /theme
+
+Open a dialog that lets you change the visual theme of Gemini CLI.
+
+```bash
+/theme
+```
+
+### /tools
+
+Display a list of tools that are currently available within Gemini CLI.
+
+```bash
+/tools [subcommand]
+```
+
+#### Subcommands
+
+<ParamField path="desc" type="subcommand">
+  Show detailed descriptions of each tool, including each tool's name with its full description as provided to the model
+  
+  **Alias:** `descriptions`
+</ParamField>
+
+<ParamField path="nodesc" type="subcommand">
+  Hide tool descriptions, showing only the tool names
+  
+  **Alias:** `nodescriptions`
+</ParamField>
+
+### /vim
+
+Toggle vim mode on or off. When vim mode is enabled, the input area supports vim-style navigation and editing commands in both NORMAL and INSERT modes.
+
+```bash
+/vim
+```
+
+**Features:**
+- **Count support:** Prefix commands with numbers (e.g., `3h`, `5w`, `10G`)
+- **Editing commands:** Delete with `x`, change with `c`, insert with `i`, `a`, `o`, `O`; complex operations like `dd`, `cc`, `dw`, `cw`
+- **INSERT mode:** Standard text input with escape to return to NORMAL mode
+- **NORMAL mode:** Navigate with `h`, `j`, `k`, `l`; jump by words with `w`, `b`, `e`; go to line start/end with `0`, `$`, `^`; go to specific lines with `G` (or `gg` for first line)
+- **Persistent setting:** Vim mode preference is saved to `~/.gemini/settings.json` and restored between sessions
+- **Repeat last command:** Use `.` to repeat the last editing operation
+- **Status indicator:** When enabled, shows `[NORMAL]` or `[INSERT]` in the footer
+
+## At Commands (@)
+
+At commands are used to include the content of files or directories as part of your prompt to Gemini. These commands include git-aware filtering.
+
+### @path
+
+Inject the content of the specified file or files into your current prompt.
+
+```bash
+@path/to/your/file.txt Explain this text.
+@src/my_project/ Summarize the code in this directory.
+What is this file about? @README.md
+```
+
+**Details:**
+- If a path to a single file is provided, the content of that file is read
+- If a path to a directory is provided, the command attempts to read the content of files within that directory and any subdirectories
+- Spaces in paths should be escaped with a backslash (e.g., `@My\ Documents/file.txt`)
+- The command uses the `read_many_files` tool internally
+- **Git-aware filtering:** By default, git-ignored files (like `node_modules/`, `dist/`, `.env`, `.git/`) are excluded. This behavior can be changed via the `context.fileFiltering` settings.
+- **File types:** The command is intended for text-based files. Binary files or very large files might be skipped or truncated by the underlying tool.
+
+### @ (Lone at symbol)
+
+If you type a lone `@` symbol without a path, the query is passed as-is to the Gemini model. This might be useful if you are specifically talking about the `@` symbol in your prompt.
+
+### Error handling
+
+- If the path specified after `@` is not found or is invalid, an error message will be displayed
+- If the `read_many_files` tool encounters an error (e.g., permission issues), this will also be reported
+
+## Shell Mode and Passthrough Commands (!)
+
+The `!` prefix lets you interact with your system's shell directly from within Gemini CLI.
+
+### !command
+
+Execute the given shell command using `bash` on Linux/macOS or `powershell.exe -NoProfile -Command` on Windows.
+
+```bash
+!ls -la
+!git status
+```
+
+### ! (Toggle shell mode)
+
+Typing `!` on its own toggles shell mode.
+
+**Entering shell mode:**
+- When active, shell mode uses a different coloring and a "Shell Mode Indicator"
+- While in shell mode, text you type is interpreted directly as a shell command
+
+**Exiting shell mode:**
+- When exited, the UI reverts to its standard appearance and normal Gemini CLI behavior resumes
+
+<Warning>
+  Commands you execute in shell mode have the same permissions and impact as if you ran them directly in your terminal.
+</Warning>
+
+<Info>
+  **Environment variable:** When a command is executed via `!` or in shell mode, the `GEMINI_CLI=1` environment variable is set in the subprocess's environment. This allows scripts or tools to detect if they are being run from within the Gemini CLI.
+</Info>
+
+## Custom Commands
+
+Custom commands allow you to create personalized shortcuts for your most-used prompts. For detailed instructions on how to create, manage, and use them, please see the dedicated [Custom Commands documentation](/advanced/custom-commands).

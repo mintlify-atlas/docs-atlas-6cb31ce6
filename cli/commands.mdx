@@ -1,0 +1,376 @@
+---
+title: Commands Overview
+description: Explore slash commands, @ references, and shell mode in Gemini CLI
+---
+
+Gemini CLI supports three types of built-in commands to help you manage sessions, include context, and execute shell commands. Commands are prefixed with `/` (slash), `@` (at), or `!` (exclamation mark).
+
+## Command Types
+
+<CardGroup cols={3}>
+  <Card title="Slash Commands" icon="slash" href="#slash-commands">
+    Meta-level control over the CLI itself
+  </Card>
+  <Card title="At References" icon="at" href="#at-commands">
+    Include file and directory content in prompts
+  </Card>
+  <Card title="Shell Mode" icon="terminal" href="#shell-mode">
+    Execute system commands directly
+  </Card>
+</CardGroup>
+
+## Slash Commands (`/`)
+
+Slash commands provide meta-level control over Gemini CLI functionality.
+
+### Session Management
+
+<AccordionGroup>
+  <Accordion title="/resume - Browse and resume sessions">
+    Opens an interactive session browser where you can:
+    - Search through conversation history across all sessions (press `/`)
+    - Sort sessions by date or message count
+    - Delete unwanted sessions
+    - Resume any previous conversation
+
+    All conversations are automatically saved as you chat.
+
+    See [Session Management](sessions) for complete details.
+  </Accordion>
+
+  <Accordion title="/chat - Manual conversation checkpoints">
+    Save and resume conversation history for branching state.
+
+    **Sub-commands:**
+    - `save <tag>` - Save current conversation with a tag
+    - `resume <tag>` - Resume a saved conversation
+    - `list` - List available tags (project-scoped)
+    - `delete <tag>` - Delete a saved checkpoint
+    - `share [filename]` - Export conversation to Markdown or JSON
+    - `debug` - Export most recent API request as JSON
+
+    Checkpoints are stored in:
+    - Linux/macOS: `~/.gemini/tmp/<project_hash>/`
+    - Windows: `C:\Users\<YourUsername>\.gemini\tmp\<project_hash>\`
+  </Accordion>
+
+  <Accordion title="/rewind - Navigate conversation history">
+    Navigate backward through conversation history to review or revert changes.
+
+    **Keyboard shortcut:** Press `Esc` twice
+
+    **Features:**
+    - Preview user prompts and file changes
+    - Choose to rewind history only, revert code only, or both
+  </Accordion>
+
+  <Accordion title="/restore - Restore from checkpoints">
+    Restore project files to their state before a tool was executed.
+
+    **Usage:** `/restore [tool_call_id]`
+
+    Run without arguments to list available checkpoints.
+
+    <Note>Only available when checkpointing is enabled. See [Checkpointing](checkpointing) for details.</Note>
+  </Accordion>
+</AccordionGroup>
+
+### Configuration & Settings
+
+<AccordionGroup>
+  <Accordion title="/settings - Open settings editor">
+    Opens an interactive editor to view and modify Gemini CLI settings.
+
+    Equivalent to editing `.gemini/settings.json` with validation and guidance.
+
+    See [Configuration](configuration) for available settings.
+  </Accordion>
+
+  <Accordion title="/model - Manage model configuration">
+    **Sub-commands:**
+    - `manage` - Opens dialog to configure the model
+    - `set <model-name> [--persist]` - Set the model to use
+  </Accordion>
+
+  <Accordion title="/theme - Change visual theme">
+    Opens a dialog to change the visual theme of Gemini CLI.
+  </Accordion>
+
+  <Accordion title="/vim - Toggle vim mode">
+    Toggle vim-style navigation and editing commands.
+
+    **Features:**
+    - Count support: `3h`, `5w`, `10G`
+    - Editing: `x`, `c`, `i`, `a`, `o`, `O`, `dd`, `cc`, `dw`, `cw`
+    - Navigation: `h`, `j`, `k`, `l`, `w`, `b`, `e`, `0`, `$`, `^`, `G`, `gg`
+    - Repeat: `.` to repeat last operation
+    - Modes: `[NORMAL]` and `[INSERT]` shown in footer
+  </Accordion>
+</AccordionGroup>
+
+### Context & Memory
+
+<AccordionGroup>
+  <Accordion title="/memory - Manage AI instructional context">
+    Manage hierarchical memory loaded from `GEMINI.md` files.
+
+    **Sub-commands:**
+    - `add <text>` - Add text to AI's memory
+    - `list` - List paths of GEMINI.md files in use
+    - `show` - Display full concatenated memory content
+    - `refresh` - Reload from all GEMINI.md files
+  </Accordion>
+
+  <Accordion title="/directory - Manage workspace directories">
+    Manage multi-directory workspaces.
+
+    **Sub-commands:**
+    - `add <path1>,<path2>` - Add directories (absolute, relative, or `~`)
+    - `show` - Display all added directories
+
+    <Warning>Disabled in restrictive sandbox profiles. Use `--include-directories` when starting instead.</Warning>
+  </Accordion>
+
+  <Accordion title="/init - Generate GEMINI.md">
+    Analyzes the current directory and generates a tailored `GEMINI.md` context file with project-specific instructions.
+  </Accordion>
+</AccordionGroup>
+
+### Tools & Extensions
+
+<AccordionGroup>
+  <Accordion title="/tools - Display available tools">
+    **Usage:** `/tools [desc]`
+
+    **Sub-commands:**
+    - `desc` or `descriptions` - Show detailed descriptions
+    - `nodesc` or `nodescriptions` - Show names only
+  </Accordion>
+
+  <Accordion title="/mcp - Manage MCP servers">
+    Manage Model Context Protocol (MCP) servers.
+
+    **Sub-commands:**
+    - `list` or `ls` - List configured servers and tools
+    - `desc` - List with descriptions
+    - `schema` - List with descriptions and schemas
+    - `refresh` - Restart servers and re-discover tools
+    - `enable` / `disable` - Enable or disable a server
+    - `auth <server-name>` - Authenticate with OAuth-enabled server
+  </Accordion>
+
+  <Accordion title="/extensions - Manage extensions">
+    **Sub-commands:**
+    - `list` - List active extensions
+    - `install` - Install from git repo or local path
+    - `link` - Link from local path
+    - `uninstall` - Remove an extension
+    - `update <names>|--all` - Update extensions
+    - `enable` / `disable` - Toggle extension
+    - `config` - Configure settings
+    - `restart` - Restart all extensions
+    - `explore` - Open extensions page in browser
+  </Accordion>
+
+  <Accordion title="/skills - Manage Agent Skills">
+    Manage on-demand expertise and specialized workflows.
+
+    **Sub-commands:**
+    - `list` - List all discovered skills and status
+    - `enable <name>` / `disable <name>` - Toggle skill
+    - `reload` - Refresh from all tiers
+  </Accordion>
+
+  <Accordion title="/hooks - Manage lifecycle hooks">
+    Intercept and customize behavior at specific lifecycle events.
+
+    **Sub-commands:**
+    - `list` (or `show`, `panel`) - Display all hooks with status
+    - `enable <name>` / `disable <name>` - Toggle specific hook
+    - `enable-all` / `disable-all` - Toggle all hooks
+  </Accordion>
+</AccordionGroup>
+
+### Utility Commands
+
+<AccordionGroup>
+  <Accordion title="/commands - Manage custom commands">
+    Manage custom slash commands from `.toml` files.
+
+    **Sub-commands:**
+    - `reload` - Reload from user/project `.gemini/commands/`, MCP prompts, and extensions
+  </Accordion>
+
+  <Accordion title="/compress - Summarize chat context">
+    Replace entire chat context with a summary to save tokens while retaining high-level history.
+  </Accordion>
+
+  <Accordion title="/copy - Copy last output">
+    Copies last Gemini CLI output to clipboard.
+
+    **Behavior:**
+    - Local: Uses `pbcopy`/`xclip`/`clip`
+    - Remote (SSH/WSL): Uses OSC 52 (requires terminal support)
+
+    <Info>Requires platform clipboard tools: `xclip`/`xsel` (Linux), `pbcopy` (macOS), `clip` (Windows)</Info>
+  </Accordion>
+
+  <Accordion title="/clear - Clear terminal screen">
+    Clear visible session history and scrollback.
+
+    **Keyboard shortcut:** `Ctrl+L`
+  </Accordion>
+
+  <Accordion title="/shells - View background shells">
+    Toggle the background shells view to manage long-running processes.
+  </Accordion>
+
+  <Accordion title="/stats - Display session statistics">
+    **Sub-commands:**
+    - `session` (default) - Session duration, tool calls, performance
+    - `model` - Token counts and quota information
+    - `tools` - Tool-specific usage
+  </Accordion>
+</AccordionGroup>
+
+### Other Commands
+
+<Tabs>
+  <Tab title="Information">
+    - `/about` - Show version info for filing issues
+    - `/help` or `/?` - Display help information
+    - `/docs` - Open documentation in browser
+  </Tab>
+  <Tab title="Integration">
+    - `/auth` - Change authentication method
+    - `/ide` - Manage IDE integration (`enable`, `disable`, `install`, `status`)
+    - `/editor` - Select supported editors
+    - `/terminal-setup` - Configure keybindings for multiline input
+    - `/setup-github` - Set up GitHub Actions for issue/PR automation
+  </Tab>
+  <Tab title="Security">
+    - `/permissions` - Manage folder trust (`trust [<path>]`)
+    - `/policies` - List active policies (`list`)
+    - `/privacy` - Display Privacy Notice and consent options
+  </Tab>
+  <Tab title="Advanced">
+    - `/plan` - Switch to Plan Mode (requires `experimental.plan` setting)
+    - `/bug` - File an issue (customizable via `advanced.bugCommand`)
+    - `/quit` or `/exit` - Exit Gemini CLI
+  </Tab>
+</Tabs>
+
+## At Commands (`@`)
+
+At commands inject file or directory content into your prompt with git-aware filtering.
+
+### Syntax
+
+```bash
+@<path_to_file_or_directory>
+```
+
+### Examples
+
+<CodeGroup>
+```bash File
+@path/to/your/file.txt Explain this text.
+```
+
+```bash Directory
+@src/my_project/ Summarize the code in this directory.
+```
+
+```bash Inline
+What is this file about? @README.md
+```
+
+```bash Spaces in Path
+@My\ Documents/file.txt Review this document.
+```
+</CodeGroup>
+
+### Behavior
+
+- **Single file:** Reads the file content
+- **Directory:** Reads content of files within directory and subdirectories
+- **Git-aware filtering:** Automatically excludes git-ignored files (`node_modules/`, `dist/`, `.env`, `.git/`)
+  - Customize via `context.fileFiltering` settings
+- **File types:** Intended for text files; binary/large files may be skipped or truncated
+- **Implementation:** Uses `read_many_files` tool internally
+
+<Tip>
+Type a lone `@` symbol to pass it as-is to the model (useful when discussing the `@` symbol itself).
+</Tip>
+
+### Error Handling
+
+- Invalid paths display an error; query may not be sent or sent without file content
+- Permission errors from `read_many_files` tool are reported
+
+## Shell Mode (`!`)
+
+Execute system shell commands directly from Gemini CLI.
+
+### Execute Single Command
+
+```bash
+!<shell_command>
+```
+
+**Examples:**
+```bash
+!ls -la
+!git status
+```
+
+### Toggle Shell Mode
+
+Type `!` alone to enter/exit shell mode.
+
+**When active:**
+- Different coloring with "Shell Mode Indicator"
+- All input interpreted as shell commands
+- Type `!` again to exit
+
+### Environment Variable
+
+Commands executed via `!` have `GEMINI_CLI=1` environment variable set, allowing scripts to detect execution from within Gemini CLI.
+
+<Warning>
+Shell commands have the same permissions as your terminal. Use caution.
+</Warning>
+
+## Input Shortcuts
+
+Keyboard shortcuts for text manipulation in the input prompt:
+
+| Action | Shortcut |
+|--------|----------|
+| Undo | `Alt+Z` or `Cmd+Z` |
+| Redo | `Shift+Alt+Z` or `Shift+Cmd+Z` |
+| Clear | `Ctrl+L` |
+| Rewind | `Esc` `Esc` (twice) |
+
+## Custom Commands
+
+Create personalized shortcuts for frequently used prompts using `.toml` files.
+
+See the [Custom Commands documentation](/advanced/custom-commands) for details on creating and managing custom commands.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="configuration">
+    Customize settings and behavior
+  </Card>
+  <Card title="Session Management" icon="clock-rotate-left" href="sessions">
+    Resume and manage conversations
+  </Card>
+  <Card title="Checkpointing" icon="floppy-disk" href="checkpointing">
+    Automatic snapshots before changes
+  </Card>
+  <Card title="Sandboxing" icon="shield" href="sandbox">
+    Isolated execution for safety
+  </Card>
+</CardGroup>

@@ -1,0 +1,362 @@
+---
+title: Installation
+description: Install Gemini CLI on macOS, Linux, or Windows using npm, Homebrew, MacPorts, or Anaconda
+---
+
+## System Requirements
+
+Before installing Gemini CLI, ensure your system meets the following requirements:
+
+<CardGroup cols={2}>
+  <Card title="Operating System" icon="desktop">
+    - macOS 15+
+    - Windows 11 24H2+
+    - Ubuntu 20.04+
+  </Card>
+  <Card title="Runtime & Tools" icon="gear">
+    - Node.js 20.0.0+
+    - Bash, Zsh, or PowerShell
+    - Internet connection required
+  </Card>
+</CardGroup>
+
+### Recommended Hardware
+
+<Tabs>
+  <Tab title="Casual Usage">
+    **4GB+ RAM**
+    
+    Suitable for:
+    - Short sessions
+    - Common tasks and edits
+    - Basic code analysis
+  </Tab>
+  <Tab title="Power Usage">
+    **16GB+ RAM**
+    
+    Recommended for:
+    - Long sessions
+    - Large codebases
+    - Deep context analysis
+  </Tab>
+</Tabs>
+
+<Info>
+  **Cloud Users:** Gemini CLI comes pre-installed on [Cloud Shell](https://docs.cloud.google.com/shell/docs) and [Cloud Workstations](https://cloud.google.com/workstations).
+</Info>
+
+## Installation Methods
+
+Choose the installation method that best fits your environment:
+
+### Install with npm (Recommended)
+
+The standard method to install Gemini CLI globally:
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+Once installed, verify the installation:
+
+```bash
+gemini --version
+```
+
+### Install with Homebrew (macOS/Linux)
+
+If you prefer using Homebrew:
+
+```bash
+brew install gemini-cli
+```
+
+Verify the installation:
+
+```bash
+gemini --version
+```
+
+### Install with MacPorts (macOS)
+
+For MacPorts users:
+
+```bash
+sudo port install gemini-cli
+```
+
+### Install with Anaconda (Restricted Environments)
+
+Ideal for environments with restricted package managers:
+
+<Steps>
+  <Step title="Create Conda Environment">
+    Create and activate a new environment with Node.js:
+    
+    ```bash
+    conda create -y -n gemini_env -c conda-forge nodejs
+    conda activate gemini_env
+    ```
+  </Step>
+  <Step title="Install Gemini CLI">
+    Install Gemini CLI globally via npm inside the environment:
+    
+    ```bash
+    npm install -g @google/gemini-cli
+    ```
+  </Step>
+  <Step title="Verify Installation">
+    Test the installation:
+    
+    ```bash
+    gemini --version
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Remember to activate the conda environment (`conda activate gemini_env`) before using Gemini CLI.
+</Warning>
+
+## Running Gemini CLI
+
+After installation, you can run Gemini CLI using several methods:
+
+### Standard Usage
+
+Simply run the `gemini` command:
+
+```bash
+gemini
+```
+
+Start in a specific directory with additional context:
+
+```bash
+gemini --include-directories ../lib,../docs
+```
+
+Use a specific model:
+
+```bash
+gemini -m gemini-2.5-flash
+```
+
+### Run with npx (No Installation)
+
+You can run Gemini CLI without permanent installation:
+
+```bash
+# Run the latest published version
+npx @google/gemini-cli
+```
+
+Run directly from the main branch on GitHub (useful for testing features in development):
+
+```bash
+npx https://github.com/google-gemini/gemini-cli
+```
+
+<Tip>
+  Using npx is great for trying out Gemini CLI without committing to a global installation.
+</Tip>
+
+### Run in a Sandbox (Docker/Podman)
+
+For security and isolation, run Gemini CLI inside a container:
+
+<CodeGroup>
+
+```bash Docker - Direct from Registry
+# Run the published sandbox image
+docker run --rm -it us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:0.1.1
+```
+
+```bash Docker - With Local Installation
+# Run locally installed CLI in sandbox mode
+gemini --sandbox -y -p "your prompt here"
+```
+
+</CodeGroup>
+
+<Note>
+  Sandbox mode is the default way that the CLI executes tools that might have side effects, providing an extra layer of security.
+</Note>
+
+### Run from Source (Contributors)
+
+If you're contributing to Gemini CLI, you can run it directly from source:
+
+<Tabs>
+  <Tab title="Development Mode">
+    Provides hot-reloading for active development:
+    
+    ```bash
+    # From the root of the repository
+    npm run start
+    ```
+  </Tab>
+  <Tab title="Production-like Mode">
+    Simulates a global installation by linking your local package:
+    
+    ```bash
+    # Link the local cli package to your global node_modules
+    npm link packages/cli
+    
+    # Now run your local version
+    gemini
+    ```
+  </Tab>
+</Tabs>
+
+## Release Channels
+
+Gemini CLI offers three release channels to suit different needs:
+
+### Stable (Recommended)
+
+New stable releases are published weekly. This is the default and recommended channel:
+
+```bash
+npm install -g @google/gemini-cli@latest
+# or simply
+npm install -g @google/gemini-cli
+```
+
+<Info>
+  Stable releases are promoted from the previous week's preview release along with any bug fixes.
+</Info>
+
+### Preview
+
+Test upcoming features before they reach stable. Published weekly but may contain issues:
+
+```bash
+npm install -g @google/gemini-cli@preview
+```
+
+<Warning>
+  Preview releases are not fully vetted and may contain regressions or outstanding issues. Use for testing only.
+</Warning>
+
+### Nightly
+
+Get the latest changes from the main branch. Published daily:
+
+```bash
+npm install -g @google/gemini-cli@nightly
+```
+
+<Warning>
+  Nightly builds include all changes from the main branch and should be assumed to have pending validations and issues.
+</Warning>
+
+## Non-Interactive Mode (Scripting)
+
+Gemini CLI can be used in automated workflows and scripts:
+
+<CodeGroup>
+
+```bash Simple Text Response
+# Get a simple text response
+gemini -p "Explain the architecture of this codebase"
+```
+
+```bash JSON Output
+# Get structured output for parsing
+gemini -p "Explain the architecture of this codebase" --output-format json
+```
+
+```bash Streaming JSON
+# Get real-time event streaming (useful for long-running operations)
+gemini -p "Run tests and deploy" --output-format stream-json
+```
+
+</CodeGroup>
+
+## Verifying Installation
+
+After installation, verify everything is working:
+
+<Steps>
+  <Step title="Check Version">
+    ```bash
+    gemini --version
+    ```
+  </Step>
+  <Step title="Run Help Command">
+    ```bash
+    gemini --help
+    ```
+  </Step>
+  <Step title="Test Run">
+    ```bash
+    gemini
+    ```
+    
+    This will start the interactive CLI and prompt you to authenticate.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Node.js version too old">
+    Gemini CLI requires Node.js 20.0.0 or higher. Update Node.js:
+    
+    ```bash
+    # Using nvm
+    nvm install 20
+    nvm use 20
+    
+    # Or download from nodejs.org
+    ```
+  </Accordion>
+  
+  <Accordion title="Permission denied on npm install">
+    If you get permission errors, try:
+    
+    ```bash
+    # Option 1: Use sudo (not recommended)
+    sudo npm install -g @google/gemini-cli
+    
+    # Option 2: Fix npm permissions (recommended)
+    mkdir ~/.npm-global
+    npm config set prefix '~/.npm-global'
+    echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+    source ~/.bashrc
+    npm install -g @google/gemini-cli
+    ```
+  </Accordion>
+  
+  <Accordion title="Command not found after installation">
+    Make sure your PATH includes the npm global bin directory:
+    
+    ```bash
+    # Check npm bin location
+    npm bin -g
+    
+    # Add to PATH if needed (add to ~/.bashrc or ~/.zshrc)
+    export PATH="$(npm bin -g):$PATH"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Set Up Authentication"
+    icon="lock"
+    href="/authentication"
+  >
+    Configure OAuth, API key, or Vertex AI authentication
+  </Card>
+  <Card
+    title="Quick Start Guide"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get to your first working command in minutes
+  </Card>
+</CardGroup>

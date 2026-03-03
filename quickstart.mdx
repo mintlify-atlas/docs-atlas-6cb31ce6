@@ -1,80 +1,456 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get up and running with Gemini CLI in minutes - from installation to your first working command
 ---
 
-## Get started in three steps
+## Welcome!
 
-Get your documentation site running locally and make your first customization.
+This guide will get you from zero to your first working Gemini CLI command in just a few minutes.
 
-### Step 1: Set up your local environment
+<Info>
+  **Already installed?** Jump to [Start Your First Session](#start-your-first-session).
+</Info>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Step 1: Install Gemini CLI
 
-### Step 2: Deploy your changes
+Choose your preferred installation method:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<Tabs>
+  <Tab title="npm (Recommended)">
+    ```bash
+    npm install -g @google/gemini-cli
+    ```
+  </Tab>
+  <Tab title="npx (No Install)">
+    ```bash
+    # Run instantly without installation
+    npx @google/gemini-cli
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew install gemini-cli
+    ```
+  </Tab>
+  <Tab title="MacPorts">
+    ```bash
+    sudo port install gemini-cli
+    ```
+  </Tab>
+</Tabs>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+Verify the installation:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+```bash
+gemini --version
+```
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Need more installation options? See the [Installation Guide](/installation) for Anaconda, Docker, and other methods.
 </Note>
+
+## Step 2: Start Your First Session
+
+Launch Gemini CLI:
+
+```bash
+gemini
+```
+
+You'll see a welcome screen with authentication options.
+
+## Step 3: Authenticate
+
+Choose your authentication method based on your account type:
+
+<Steps>
+  <Step title="Select Authentication Method">
+    When prompted "How would you like to authenticate for this project?", choose:
+    
+    - **Login with Google** (recommended for most users)
+    - **Use Gemini API key** (if you have an API key from AI Studio)
+    - **Vertex AI** (for enterprise/cloud users)
+  </Step>
+  <Step title="Complete Authentication">
+    **For Login with Google:**
+    - A browser window will open
+    - Sign in with your Google account
+    - Grant permissions when prompted
+    - Return to your terminal
+    
+    **For API Key:**
+    - Set your API key first: `export GEMINI_API_KEY="your-key"`
+    - Then run `gemini`
+  </Step>
+  <Step title="Verify Authentication">
+    Once authenticated, you'll see the Gemini CLI prompt:
+    
+    ```
+    >
+    ```
+    
+    You're ready to go!
+  </Step>
+</Steps>
+
+<Tip>
+  Your credentials are cached locally, so you won't need to authenticate again for future sessions.
+</Tip>
+
+## Step 4: Try Your First Commands
+
+Now let's try some basic commands to see Gemini CLI in action:
+
+### Example 1: Ask a Question
+
+```bash
+> What files are in the current directory?
+```
+
+Gemini will analyze your directory and provide a helpful overview.
+
+### Example 2: Code Explanation
+
+If you have code files in your directory:
+
+```bash
+> Explain what this project does
+```
+
+Gemini will read your code files and provide a summary.
+
+### Example 3: Generate Code
+
+```bash
+> Create a simple Node.js HTTP server that responds with "Hello World"
+```
+
+Gemini will generate the code and ask for permission to write the file.
+
+<Info>
+  Gemini CLI always asks for permission before executing commands, writing files, or making changes to your system.
+</Info>
+
+## Step 5: Learn Essential Commands
+
+Here are some key slash commands to enhance your workflow:
+
+<CardGroup cols={2}>
+  <Card title="/help" icon="circle-question">
+    Display all available commands
+    
+    ```bash
+    > /help
+    ```
+  </Card>
+  <Card title="/chat" icon="message">
+    Start a new conversation
+    
+    ```bash
+    > /chat
+    ```
+  </Card>
+  <Card title="/model" icon="microchip">
+    Switch between Gemini models
+    
+    ```bash
+    > /model gemini-2.5-flash
+    ```
+  </Card>
+  <Card title="/stats" icon="chart-simple">
+    View token usage and quota
+    
+    ```bash
+    > /stats model
+    ```
+  </Card>
+</CardGroup>
+
+## Real-World Examples
+
+Let's explore some practical use cases:
+
+### Create a New Project from Scratch
+
+<Steps>
+  <Step title="Navigate to Project Directory">
+    ```bash
+    mkdir my-discord-bot
+    cd my-discord-bot
+    gemini
+    ```
+  </Step>
+  <Step title="Describe What You Want">
+    ```bash
+    > Write me a Discord bot that answers questions using a FAQ.md file I will provide
+    ```
+  </Step>
+  <Step title="Let Gemini Work">
+    Gemini will:
+    - Create necessary files (package.json, bot.js, etc.)
+    - Write the implementation
+    - Ask for permission before writing files
+    - Provide instructions for running the bot
+  </Step>
+</Steps>
+
+### Analyze an Existing Repository
+
+<Steps>
+  <Step title="Clone and Navigate">
+    ```bash
+    git clone https://github.com/google-gemini/gemini-cli
+    cd gemini-cli
+    gemini
+    ```
+  </Step>
+  <Step title="Ask for Analysis">
+    ```bash
+    > Give me a summary of all of the changes that went in yesterday
+    ```
+    
+    Or:
+    
+    ```bash
+    > Explain the overall architecture of this codebase
+    ```
+  </Step>
+  <Step title="Review Results">
+    Gemini will analyze git history and source files to provide insights.
+  </Step>
+</Steps>
+
+### Automate File Management
+
+```bash
+# Rename photos based on their content
+> Rename the photos in my "photos" directory based on their contents
+
+# Combine CSV files
+> Combine Revenue-2023.csv and Revenue-2024.csv into a single file
+
+# Generate documentation
+> Create a README.md file explaining this project
+```
+
+## Advanced Usage
+
+### Non-Interactive Mode (for Scripts)
+
+Run Gemini CLI non-interactively for automation:
+
+<CodeGroup>
+
+```bash Simple Text Output
+gemini -p "Explain the architecture of this codebase"
+```
+
+```bash JSON Output (for parsing)
+gemini -p "List all TODO comments in the code" --output-format json
+```
+
+```bash Streaming JSON (for real-time updates)
+gemini -p "Run tests and fix any failures" --output-format stream-json
+```
+
+</CodeGroup>
+
+### Include Additional Directories
+
+Provide more context from related directories:
+
+```bash
+gemini --include-directories ../lib,../docs,../tests
+```
+
+### Choose a Specific Model
+
+```bash
+# Use Gemini 2.5 Flash (faster)
+gemini -m gemini-2.5-flash
+
+# Or specify in interactive mode
+> /model gemini-2.5-flash
+```
+
+## Understanding Permissions
+
+Gemini CLI asks for permission before:
+
+<CardGroup cols={2}>
+  <Card title="File Operations" icon="file">
+    - Reading files
+    - Writing new files
+    - Modifying existing files
+    - Deleting files
+  </Card>
+  <Card title="System Operations" icon="terminal">
+    - Running shell commands
+    - Installing packages
+    - Executing scripts
+    - Network requests
+  </Card>
+</CardGroup>
+
+Permission options:
+- **Allow once** - Grant permission for this action only
+- **Allow all** - Grant permission for all actions in this session
+- **Deny** - Reject the action
+
+<Warning>
+  Be cautious with "Allow all" - review what Gemini plans to do before granting blanket permissions.
+</Warning>
+
+## Check Your Usage
+
+Monitor your token usage and quota:
+
+```bash
+> /stats model
+```
+
+This shows:
+- Current session token usage
+- Overall quota for your account
+- Usage by model
+- Remaining quota
+
+<Info>
+  Free tier includes 60 requests/min and 1,000 requests/day for individual Google accounts.
+</Info>
+
+## Tips for Success
+
+<AccordionGroup>
+  <Accordion title="Be Specific with Your Prompts">
+    The more context you provide, the better results you'll get:
+    
+    ❌ "Create a server"
+    
+    ✅ "Create a Node.js Express server with endpoints for GET /users and POST /users, using JSON file storage"
+  </Accordion>
+  
+  <Accordion title="Use Context Files">
+    Create a `GEMINI.md` file in your project root to provide persistent context:
+    
+    ```markdown
+    # Project Context
+    
+    This is a Discord bot written in JavaScript.
+    Use CommonJS (require) instead of ES modules.
+    Follow the existing code style in bot.js.
+    ```
+  </Accordion>
+  
+  <Accordion title="Break Down Complex Tasks">
+    For large projects, break work into smaller steps:
+    
+    ```bash
+    > First, analyze the current authentication system
+    > Now, design a new OAuth2 flow
+    > Finally, implement the OAuth2 flow we designed
+    ```
+  </Accordion>
+  
+  <Accordion title="Review Before Allowing">
+    Always review what Gemini plans to do:
+    - Check file paths
+    - Review commands before execution
+    - Understand what will be modified
+  </Accordion>
+</AccordionGroup>
+
+## Keyboard Shortcuts
+
+Speed up your workflow with these shortcuts:
+
+| Shortcut | Action |
+| :--- | :--- |
+| `Ctrl+C` | Cancel current operation |
+| `Ctrl+D` | Exit Gemini CLI |
+| `↑` / `↓` | Navigate command history |
+| `Tab` | Auto-complete (when available) |
+
+<Note>
+  See the [Keyboard Shortcuts Reference](/reference/keyboard-shortcuts) for a complete list.
+</Note>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Authentication keeps failing">
+    - Clear cached credentials: `rm -rf ~/.gemini/credentials`
+    - Try using an API key instead: `export GEMINI_API_KEY="your-key"`
+    - Check your internet connection
+    - Verify you're in a [supported location](https://developers.google.com/gemini-code-assist/resources/available-locations#americas)
+  </Accordion>
+  
+  <Accordion title="Gemini can't see my files">
+    - Ensure you're in the correct directory
+    - Use `--include-directories` to add more context
+    - Check file permissions
+    - Try explicitly mentioning the file: "Read the contents of src/app.js"
+  </Accordion>
+  
+  <Accordion title="Responses are slow">
+    - Try a faster model: `/model gemini-2.5-flash`
+    - Reduce context by limiting included directories
+    - Check your internet connection
+    - Consider if you're hitting rate limits (check with `/stats model`)
+  </Accordion>
+  
+  <Accordion title="Commands not executing">
+    - Verify you granted permission when prompted
+    - Check that required tools are installed (git, npm, etc.)
+    - Review error messages carefully
+    - Try running the command manually to debug
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Now that you're up and running, explore more features:
+
+<CardGroup cols={2}>
+  <Card
+    title="Commands Reference"
+    icon="terminal"
+    href="/reference/commands"
+  >
+    Learn all available slash commands
+  </Card>
+  <Card
+    title="Configuration Guide"
+    icon="gear"
+    href="/reference/configuration"
+  >
+    Customize Gemini CLI to your workflow
+  </Card>
+  <Card
+    title="MCP Server Integration"
+    icon="plug"
+    href="/tools/mcp-server"
+  >
+    Extend Gemini CLI with custom tools
+  </Card>
+  <Card
+    title="Examples & Tutorials"
+    icon="book"
+    href="/examples"
+  >
+    Explore real-world use cases
+  </Card>
+</CardGroup>
+
+## Get Help
+
+Need assistance?
+
+- Use `/help` in the CLI for built-in help
+- Check the [FAQ](/resources/faq) for common questions
+- Report bugs with `/bug` or on [GitHub Issues](https://github.com/google-gemini/gemini-cli/issues)
+- Read the [Troubleshooting Guide](/resources/troubleshooting)
+
+<Tip>
+  Join the community! Share your MCP servers, custom commands, and use cases on GitHub Discussions.
+</Tip>

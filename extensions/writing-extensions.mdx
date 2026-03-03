@@ -1,0 +1,454 @@
+---
+title: Writing Extensions
+description: Create custom extensions to expand Gemini CLI capabilities
+icon: code
+---
+
+This guide walks you through creating your first Gemini CLI extension, from setting up a template to adding custom functionality and linking it for local development.
+
+## Prerequisites
+
+<CardGroup cols={2}>
+  <Card title="Gemini CLI" icon="terminal">
+    Ensure you have the Gemini CLI installed
+  </Card>
+  <Card title="Node.js" icon="node-js">
+    Basic understanding of Node.js and npm
+  </Card>
+</CardGroup>
+
+## Step 1: Create a New Extension
+
+The easiest way to start is by using a built-in template. We'll use the `mcp-server` example as our foundation.
+
+```bash
+gemini extensions new my-first-extension mcp-server
+```
+
+This creates a directory with the following structure:
+
+```
+my-first-extension/
+├── example.js
+├── gemini-extension.json
+└── package.json
+```
+
+## Step 2: Understand the Extension Files
+
+### `gemini-extension.json`
+
+The manifest file tells Gemini CLI how to load and use your extension.
+
+```json
+{
+  "name": "mcp-server-example",
+  "version": "1.0.0",
+  "mcpServers": {
+    "nodeServer": {
+      "command": "node",
+      "args": ["${extensionPath}${/}example.js"],
+      "cwd": "${extensionPath}"
+    }
+  }
+}
+```
+
+<ParamField path="name" type="string" required>
+  Unique name for your extension
+</ParamField>
+
+<ParamField path="version" type="string" required>
+  Version of your extension (semver format)
+</ParamField>
+
+<ParamField path="mcpServers" type="object">
+  MCP server configurations. The `${extensionPath}` variable is replaced with the absolute path to your extension directory.
+</ParamField>
+
+### `example.js`
+
+This file contains the MCP server implementation using the `@modelcontextprotocol/sdk`.
+
+```javascript
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { z } from 'zod';
+
+const server = new McpServer({
+  name: 'prompt-server',
+  version: '1.0.0',
+});
+
+// Register a new tool
+server.registerTool(
+  'fetch_posts',
+  {
+    description: 'Fetches a list of posts from a public API.',
+    inputSchema: z.object({}).shape,
+  },
+  async () => {
+    const apiResponse = await fetch(
+      'https://jsonplaceholder.typicode.com/posts',
+    );
+    const posts = await apiResponse.json();
+    const response = { posts: posts.slice(0, 5) };
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(response),
+        },
+      ],
+    };
+  },
+);
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+### `package.json`
+
+Standard Node.js configuration file that defines dependencies and scripts.
+
+<Info>
+The template includes `@modelcontextprotocol/sdk` and `zod` as dependencies for building MCP servers.
+</Info>
+
+## Step 3: Add Extension Settings
+
+Some extensions need configuration like API keys or user preferences. Let's add a setting for an API key.
+
+<Steps>
+  <Step title="Open manifest">
+    Open `gemini-extension.json`
+  </Step>
+  
+  <Step title="Add settings">
+    Add a `settings` array to the configuration:
+
+    ```json
+    {
+      "name": "mcp-server-example",
+      "version": "1.0.0",
+      "settings": [
+        {
+          "name": "API Key",
+          "description": "The API key for the service.",
+          "envVar": "MY_SERVICE_API_KEY",
+          "sensitive": true
+        }
+      ],
+      "mcpServers": {
+        // ...
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+<ParamField path="name" type="string" required>
+  Display name shown to the user
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  Description of what this setting is for
+</ParamField>
+
+<ParamField path="envVar" type="string" required>
+  Environment variable name that will be set
+</ParamField>
+
+<ParamField path="sensitive" type="boolean" default="false">
+  When `true`, the value is stored securely in the system keychain
+</ParamField>
+
+When a user installs this extension, Gemini CLI will:
+1. Prompt them to enter the "API Key"
+2. Store it securely in the system keychain (because `sensitive` is true)
+3. Inject it into the MCP server's process as the `MY_SERVICE_API_KEY` environment variable
+
+## Step 4: Link Your Extension
+
+Link your extension to your Gemini CLI installation for local development.
+
+<Steps>
+  <Step title="Install dependencies">
+    ```bash
+    cd my-first-extension
+    npm install
+    ```
+  </Step>
+  
+  <Step title="Link the extension">
+    The `link` command creates a symbolic link from the Gemini CLI extensions directory to your development directory.
+
+    ```bash
+    gemini extensions link .
+    ```
+
+    Changes you make are reflected immediately.
+  </Step>
+  
+  <Step title="Test the extension">
+    Restart your Gemini CLI session and test the new tool:
+    
+    ```
+    fetch posts
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+You don't need to restart Gemini CLI after making code changes. The MCP server will be reloaded automatically on the next tool invocation.
+</Tip>
+
+## Step 5: Add a Custom Command
+
+Custom commands create shortcuts for complex prompts.
+
+<Steps>
+  <Step title="Create directory structure">
+    Create a `commands` directory and subdirectory:
+
+    **macOS/Linux:**
+    ```bash
+    mkdir -p commands/fs
+    ```
+
+    **Windows (PowerShell):**
+    ```powershell
+    New-Item -ItemType Directory -Force -Path "commands\fs"
+    ```
+  </Step>
+  
+  <Step title="Create command file">
+    Create `commands/fs/grep-code.toml`:
+
+    ```toml
+    prompt = """
+    Please summarize the findings for the pattern `{{args}}`.
+
+    Search Results:
+    !{grep -r {{args}} .}
+    """
+    ```
+
+    This command:
+    - Takes an argument (`{{args}}`)
+    - Runs the `grep` shell command
+    - Pipes results into a prompt for summarization
+  </Step>
+  
+  <Step title="Use the command">
+    Restart Gemini CLI and run:
+
+    ```
+    /fs:grep-code "some pattern"
+    ```
+  </Step>
+</Steps>
+
+<Card title="Custom Commands Reference" icon="book" href="/advanced/custom-commands">
+  Learn more about custom command syntax and features
+</Card>
+
+## Step 6: Add Custom Context
+
+Provide persistent context to the model by adding a `GEMINI.md` file.
+
+<Steps>
+  <Step title="Create context file">
+    Create `GEMINI.md` in the root of your extension directory:
+
+    ```markdown
+    # My First Extension Instructions
+
+    You are an expert developer assistant. When the user asks you to fetch
+    posts, use the `fetch_posts` tool. Be concise in your responses.
+    ```
+  </Step>
+  
+  <Step title="Update manifest">
+    Update `gemini-extension.json` to load this file:
+
+    ```json
+    {
+      "name": "my-first-extension",
+      "version": "1.0.0",
+      "contextFileName": "GEMINI.md",
+      "mcpServers": {
+        "nodeServer": {
+          "command": "node",
+          "args": ["${extensionPath}${/}example.js"],
+          "cwd": "${extensionPath}"
+        }
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Restart CLI">
+    Restart Gemini CLI. The model now has the context from your `GEMINI.md` file in every session where the extension is active.
+  </Step>
+</Steps>
+
+<Info>
+Context files are loaded at the start of every session, so keep them concise to avoid consuming too many tokens.
+</Info>
+
+## Step 7: Add an Agent Skill (Optional)
+
+Agent Skills bundle specialized expertise and workflows. Skills are activated only when needed, saving context tokens.
+
+<Steps>
+  <Step title="Create skill directory">
+    **macOS/Linux:**
+    ```bash
+    mkdir -p skills/security-audit
+    ```
+
+    **Windows (PowerShell):**
+    ```powershell
+    New-Item -ItemType Directory -Force -Path "skills\security-audit"
+    ```
+  </Step>
+  
+  <Step title="Create skill file">
+    Create `skills/security-audit/SKILL.md`:
+
+    ```markdown
+    ---
+    name: security-audit
+    description: Expertise in auditing code for security vulnerabilities. Use when the user asks to "check for security issues" or "audit" their changes.
+    ---
+
+    # Security Auditor
+
+    You are an expert security researcher. When auditing code:
+
+    1. Look for common vulnerabilities (OWASP Top 10).
+    2. Check for hardcoded secrets or API keys.
+    3. Suggest remediation steps for any findings.
+    ```
+  </Step>
+  
+  <Step title="Automatic discovery">
+    Gemini CLI automatically discovers skills bundled with your extension. The model activates them when it identifies a relevant task.
+  </Step>
+</Steps>
+
+<Card title="Agent Skills Guide" icon="brain" href="/advanced/skills">
+  Learn more about the agent skills system
+</Card>
+
+## Extension Structure Summary
+
+Here's what your complete extension looks like:
+
+```
+my-first-extension/
+├── commands/
+│   └── fs/
+│       └── grep-code.toml
+├── skills/
+│   └── security-audit/
+│       └── SKILL.md
+├── example.js
+├── gemini-extension.json
+├── GEMINI.md
+└── package.json
+```
+
+## Step 8: Release Your Extension
+
+When your extension is ready, share it with others via a Git repository or GitHub Releases.
+
+<Card title="Extension Releasing Guide" icon="upload" href="/extensions/releasing">
+  Learn how to publish and list your extension in the gallery
+</Card>
+
+## Testing Your Extension
+
+<AccordionGroup>
+  <Accordion title="Test MCP Tools">
+    Ask the model to use your tools:
+
+    ```
+    Can you fetch posts for me?
+    ```
+
+    Verify the tool executes correctly and returns expected results.
+  </Accordion>
+
+  <Accordion title="Test Custom Commands">
+    Run your custom commands:
+
+    ```
+    /fs:grep-code "function"
+    ```
+
+    Verify the command executes and the prompt is formatted correctly.
+  </Accordion>
+
+  <Accordion title="Test Context">
+    Verify the model has your context:
+
+    ```
+    What are your instructions?
+    ```
+
+    The model should reference content from your `GEMINI.md` file.
+  </Accordion>
+
+  <Accordion title="Test Skills">
+    Trigger your skill:
+
+    ```
+    Please audit this code for security issues
+    ```
+
+    Verify the skill is activated and provides specialized responses.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep Context Concise" icon="compress">
+    Context files consume tokens in every session. Be brief and focused.
+  </Card>
+  <Card title="Use Skills for Complex Tasks" icon="brain">
+    Move complex instructions to skills to save context when not needed.
+  </Card>
+  <Card title="Validate Inputs" icon="check">
+    Always validate tool inputs to prevent errors and security issues.
+  </Card>
+  <Card title="Handle Errors Gracefully" icon="shield">
+    Return clear error messages when tools fail.
+  </Card>
+  <Card title="Document Your Extension" icon="book">
+    Include a README explaining what your extension does and how to use it.
+  </Card>
+  <Card title="Version Carefully" icon="tag">
+    Follow semantic versioning for your extension releases.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Extension Reference" icon="book" href="/extensions/reference">
+    Detailed API reference and configuration options
+  </Card>
+  <Card title="Best Practices" icon="star" href="/extensions/best-practices">
+    Learn strategies for building great extensions
+  </Card>
+  <Card title="Publishing Guide" icon="upload" href="/extensions/releasing">
+    Share your extension with the community
+  </Card>
+  <Card title="MCP Server Guide" icon="plug" href="/tools/mcp-server">
+    Deep dive into MCP server integration
+  </Card>
+</CardGroup>

@@ -1,0 +1,353 @@
+---
+title: GEMINI.md File Format
+description: Provide context and instructions to Gemini CLI using GEMINI.md files
+icon: brain
+---
+
+Context files (defaulting to `GEMINI.md`) are a powerful feature for providing instructional context to the Gemini model. Instead of repeating instructions in every prompt, you can define them once in a context file.
+
+## What are GEMINI.md Files?
+
+GEMINI.md files are Markdown documents that contain:
+
+- Project-specific instructions
+- Coding style guides
+- Architecture documentation
+- Component-specific guidelines
+- Development conventions
+- Any relevant background information
+
+The CLI concatenates all found context files and includes them with every prompt, making the AI's responses more accurate and tailored to your project.
+
+## Context Hierarchy
+
+The CLI uses a hierarchical system to source context files, loading them in the following order:
+
+<Steps>
+  <Step title="Global Context">
+    **Location:** `~/.gemini/GEMINI.md`
+    
+    **Scope:** Provides default instructions for all your projects across your entire system.
+    
+    **Use for:** Personal coding preferences, general development practices, favorite libraries
+  </Step>
+  
+  <Step title="Environment & Workspace Context">
+    **Location:** Searched in configured workspace directories and their parent directories
+    
+    **Scope:** Provides context relevant to the projects you are currently working on.
+    
+    **Use for:** Multi-project context, shared team conventions
+  </Step>
+  
+  <Step title="Just-in-Time (JIT) Context">
+    **Location:** Automatically discovered when tools access files or directories
+    
+    **Scope:** Highly specific instructions for particular components, discovered only when needed.
+    
+    **Use for:** Component-specific rules, module documentation, subsystem guidelines
+  </Step>
+</Steps>
+
+<Info>
+The CLI footer displays the number of loaded context files, giving you a quick visual indicator of the active context.
+</Info>
+
+## Example GEMINI.md File
+
+Here's a comprehensive example for a TypeScript project:
+
+```markdown
+# Project: My TypeScript Library
+
+## General Instructions
+
+- When you generate new TypeScript code, follow the existing coding style.
+- Ensure all new functions and classes have JSDoc comments.
+- Prefer functional programming paradigms where appropriate.
+- All code should be compatible with TypeScript 5.0 and Node.js 20+.
+
+## Coding Style
+
+- Use 2 spaces for indentation.
+- Prefix interface names with `I` (for example, `IUserService`).
+- Private class members should be prefixed with an underscore (`_`).
+- Always use strict equality (`===` and `!==`).
+- Avoid `any` types; use `unknown` or proper type definitions.
+
+## Testing Requirements
+
+- All new features must include unit tests.
+- Use Jest for testing.
+- Aim for 80% code coverage minimum.
+- Place test files next to the code they test with `.test.ts` extension.
+
+## Component: src/api/client.ts
+
+- This file handles all outbound API requests.
+- When adding new API call functions, ensure they include robust error handling and logging.
+- Use the existing `fetchWithRetry` utility for all GET requests.
+- All API errors should be wrapped in our custom `APIError` class.
+
+## Dependencies
+
+- Avoid introducing new external dependencies unless absolutely necessary.
+- If a new dependency is required, please explain the reason and check the bundle size impact.
+- Prefer native Node.js APIs when possible.
+```
+
+## Using the /memory Command
+
+Interact with loaded context files using the `/memory` command:
+
+<AccordionGroup>
+  <Accordion title="/memory show">
+    Displays the full, concatenated content of the current hierarchical memory.
+    
+    Use this to inspect the exact instructional context being provided to the model.
+    
+    ```bash
+    > /memory show
+    ```
+  </Accordion>
+  
+  <Accordion title="/memory refresh">
+    Forces a re-scan and reload of all GEMINI.md files from all configured locations.
+    
+    Use this after modifying context files to immediately apply changes.
+    
+    ```bash
+    > /memory refresh
+    ```
+  </Accordion>
+  
+  <Accordion title="/memory add <text>">
+    Appends your text to your global `~/.gemini/GEMINI.md` file.
+    
+    Use this to add persistent memories on the fly.
+    
+    ```bash
+    > /memory add Always use async/await instead of promises
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Modularizing Context with Imports
+
+Break down large GEMINI.md files into smaller, manageable components using the `@file.md` syntax:
+
+```markdown
+# Main GEMINI.md file
+
+This is the main content for my project.
+
+## Coding Standards
+
+@./components/coding-style.md
+
+## Architecture
+
+@./docs/architecture.md
+
+## Shared Guidelines
+
+@../shared/style-guide.md
+```
+
+**Features:**
+- Supports both relative and absolute paths
+- Can reference files in parent directories
+- Helps organize large context files
+- Makes context reusable across projects
+
+<Card title="Memory Import Processor" icon="file-import" href="/reference/memport">
+  Learn more about the import syntax and advanced features
+</Card>
+
+## Customizing the Context File Name
+
+While `GEMINI.md` is the default filename, you can configure alternative names in your `settings.json`:
+
+**Single custom name:**
+
+```json
+{
+  "context": {
+    "fileName": "CONTEXT.md"
+  }
+}
+```
+
+**Multiple names (priority order):**
+
+```json
+{
+  "context": {
+    "fileName": ["AGENTS.md", "CONTEXT.md", "GEMINI.md"]
+  }
+}
+```
+
+The CLI will search for files in the order specified and load all matches.
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Be Specific" icon="bullseye">
+    Provide clear, actionable instructions rather than vague guidance. "Use 2 spaces for indentation" is better than "follow good coding practices."
+  </Card>
+  
+  <Card title="Use Hierarchy" icon="sitemap">
+    Place general instructions in global GEMINI.md, project conventions in the root, and component-specific rules in subdirectories.
+  </Card>
+  
+  <Card title="Include Examples" icon="code">
+    Show examples of preferred code patterns, naming conventions, and API usage. The model learns better from examples.
+  </Card>
+  
+  <Card title="Keep It Current" icon="rotate">
+    Update context files as your project evolves. Use `/memory refresh` to reload after changes.
+  </Card>
+  
+  <Card title="Test Coverage" icon="flask">
+    Include testing requirements and patterns so the model knows to write tests for new features.
+  </Card>
+  
+  <Card title="Document Architecture" icon="diagram-project">
+    Explain your project structure, key components, and how they interact. This helps the model make better suggestions.
+  </Card>
+</CardGroup>
+
+## Advanced Usage Patterns
+
+### Component-Specific Instructions
+
+Place GEMINI.md files in subdirectories to provide context for specific components:
+
+```
+my-project/
+├── GEMINI.md                    # Project-wide context
+├── src/
+│   ├── api/
+│   │   ├── GEMINI.md           # API-specific guidelines
+│   │   └── client.ts
+│   ├── database/
+│   │   ├── GEMINI.md           # Database conventions
+│   │   └── models.ts
+│   └── utils/
+│       └── GEMINI.md           # Utility function standards
+```
+
+### Team Conventions
+
+Share context files across your team by committing them to version control:
+
+```markdown
+# Team Coding Standards
+
+## Code Review Guidelines
+
+- All PRs require at least 2 approvals
+- No force pushing to main branch
+- Squash commits before merging
+
+## Commit Message Format
+
+Use conventional commits:
+- feat: New feature
+- fix: Bug fix
+- docs: Documentation only
+- refactor: Code change that neither fixes a bug nor adds a feature
+
+## Branch Naming
+
+- feature/description
+- bugfix/description
+- hotfix/description
+```
+
+### Multi-Language Projects
+
+Provide language-specific context in different sections:
+
+```markdown
+# Full-Stack Project Context
+
+## Frontend (React/TypeScript)
+
+- Use functional components with hooks
+- Prefer named exports over default exports
+- Keep components under 200 lines
+
+## Backend (Python/FastAPI)
+
+- Follow PEP 8 style guide
+- Use type hints for all function signatures
+- Write docstrings for all public functions
+
+## Database (PostgreSQL)
+
+- Use snake_case for table and column names
+- Always include created_at and updated_at timestamps
+- Add indexes for foreign keys
+```
+
+## Configuration Settings
+
+Control context file behavior with these settings:
+
+<ParamField path="context.fileName" type="string | string[]" default="GEMINI.md">
+  The name(s) of context files to load
+</ParamField>
+
+<ParamField path="context.discoveryMaxDirs" type="number" default="200">
+  Maximum number of directories to search for memory files
+</ParamField>
+
+<ParamField path="context.loadMemoryFromIncludeDirectories" type="boolean" default="false">
+  Controls how `/memory refresh` loads GEMINI.md files. When true, include directories are scanned; when false, only the current directory is used.
+</ParamField>
+
+<ParamField path="context.includeDirectories" type="array" default="[]">
+  Additional directories to include in the workspace context
+</ParamField>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Context files not loading">
+    1. Check the file name matches your `context.fileName` setting
+    2. Verify file locations are within searched paths
+    3. Use `/memory show` to see what's currently loaded
+    4. Run `/memory refresh` to force a re-scan
+    5. Check the footer indicator for loaded context count
+  </Accordion>
+  
+  <Accordion title="Too much context loaded">
+    1. Reduce `context.discoveryMaxDirs` setting
+    2. Use `.geminiignore` to exclude directories
+    3. Be more specific about which directories to scan
+    4. Remove or rename unused GEMINI.md files
+  </Accordion>
+  
+  <Accordion title="Context changes not reflected">
+    Always run `/memory refresh` after modifying GEMINI.md files to reload the context.
+  </Accordion>
+</AccordionGroup>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Settings Reference" icon="gear" href="/reference/settings">
+    Configure context file behavior
+  </Card>
+  <Card title=".geminiignore" icon="ban" href="/cli/gemini-ignore">
+    Exclude files from context
+  </Card>
+  <Card title="Custom Commands" icon="terminal" href="/advanced/custom-commands">
+    Automate common prompts
+  </Card>
+  <Card title="Memory Tool" icon="database" href="/tools/memory">
+    Save persistent memories
+  </Card>
+</CardGroup>

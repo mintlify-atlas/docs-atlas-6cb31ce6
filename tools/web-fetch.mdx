@@ -1,0 +1,139 @@
+---
+title: Web Fetch
+description: Retrieve and process content from URLs using the web_fetch tool
+icon: globe
+---
+
+The `web_fetch` tool allows the Gemini agent to retrieve and process content from specific URLs provided in your prompt.
+
+## Overview
+
+The agent automatically uses this tool when you include URLs in your prompt and request specific operations like summarization or data extraction.
+
+## Parameters
+
+<ParamField path="prompt" type="string" required>
+  A request containing up to 20 valid URLs (starting with `http://` or `https://`) and instructions on how to process them
+</ParamField>
+
+## How It Works
+
+<Steps>
+  <Step title="URL Detection">
+    The model detects URLs in your prompt and determines if web fetching is needed
+  </Step>
+  
+  <Step title="Confirmation">
+    A confirmation dialog appears showing the URLs that will be fetched
+  </Step>
+  
+  <Step title="Content Retrieval">
+    The tool uses the Gemini API's `urlContext` feature for retrieval. If API access fails, it attempts to fetch raw content directly from your local machine.
+  </Step>
+  
+  <Step title="Processing">
+    Returns a synthesized response with source attribution based on your instructions
+  </Step>
+</Steps>
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Article Summarization" icon="file-lines">
+    Summarize technical articles or blog posts
+  </Card>
+  <Card title="Data Comparison" icon="chart-line">
+    Compare information between multiple web pages
+  </Card>
+  <Card title="Information Extraction" icon="magnifying-glass">
+    Extract specific data from documentation sites
+  </Card>
+  <Card title="Content Analysis" icon="microscope">
+    Analyze and synthesize content from web resources
+  </Card>
+</CardGroup>
+
+## Examples
+
+### Summarize an Article
+
+```
+Summarize the key points from this article:
+https://example.com/technical-article
+```
+
+The model will:
+1. Detect the URL in your prompt
+2. Request confirmation to fetch the URL
+3. Retrieve the article content
+4. Generate a summary of the key points
+
+### Compare Multiple Sources
+
+```
+Compare the approaches described in these two articles:
+https://example.com/article-1
+https://example.com/article-2
+
+What are the main differences?
+```
+
+The model will:
+1. Fetch both URLs
+2. Analyze the content from each source
+3. Identify and compare the different approaches
+4. Provide a structured comparison
+
+### Extract Specific Information
+
+```
+What are the installation requirements mentioned at:
+https://example.com/docs/installation
+```
+
+The model will:
+1. Fetch the documentation page
+2. Identify the installation requirements section
+3. Extract and list the specific requirements
+
+## Limitations
+
+<Warning>
+**URL Limits:** The tool supports up to 20 URLs per request.
+</Warning>
+
+<Info>
+Only URLs starting with `http://` or `https://` are supported. Other protocols (ftp://, file://, etc.) are not processed.
+</Info>
+
+## Fallback Behavior
+
+If the Gemini API's `urlContext` feature is unavailable:
+
+1. The tool attempts to fetch raw HTML content directly from your machine
+2. Content is processed locally and sent to the model
+3. Some features like JavaScript-rendered content may not be available
+
+## Response Format
+
+The tool returns synthesized content with:
+- **Source Attribution:** Each piece of information is attributed to its source URL
+- **Structured Content:** Content is organized based on your prompt instructions
+- **Original Context:** The full context is preserved for the model to reason about
+
+## Security
+
+<Note>
+All web fetches trigger a confirmation dialog showing the exact URLs that will be accessed. Review these carefully before approving.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Web Tools Guide" icon="book" href="/cli/tutorials/web-tools">
+    Practical examples of using web fetch
+  </Card>
+  <Card title="Web Search" icon="magnifying-glass" href="/tools/web-search">
+    Learn about the web search tool for general queries
+  </Card>
+</CardGroup>
