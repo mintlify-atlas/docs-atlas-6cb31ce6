@@ -1,0 +1,137 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Gemini CLI",
+  "projectDescription": "An open-source AI agent that brings the power of Gemini directly into your terminal",
+  "theme": "aspen",
+  "primaryColor": "#4285F4",
+  "lightColor": "#8AB4F8",
+  "darkColor": "#1967D2",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "authentication",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/how-it-works",
+              "concepts/models",
+              "concepts/tools",
+              "concepts/context"
+            ]
+          },
+          {
+            "group": "CLI Usage",
+            "pages": [
+              "cli/commands",
+              "cli/configuration",
+              "cli/sessions",
+              "cli/checkpointing",
+              "cli/sandbox"
+            ]
+          },
+          {
+            "group": "Tools & Extensions",
+            "pages": [
+              "tools/file-system",
+              "tools/shell",
+              "tools/web-fetch",
+              "tools/mcp-server",
+              "extensions/overview",
+              "extensions/writing-extensions"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/custom-commands",
+              "advanced/skills",
+              "advanced/headless",
+              "advanced/enterprise",
+              "advanced/trusted-folders"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/troubleshooting",
+              "resources/faq",
+              "resources/changelog"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Command Reference",
+            "pages": [
+              "reference/slash-commands",
+              "reference/cli-options",
+              "reference/keyboard-shortcuts"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "reference/settings",
+              "reference/gemini-md",
+              "reference/environment-variables"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "reference/extensions-api",
+              "reference/tools-api",
+              "reference/hooks"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Interactive AI-powered terminal interface",
+    "Built-in tools for file operations, shell commands, and web search",
+    "Context-aware with GEMINI.md files",
+    "MCP (Model Context Protocol) server integration",
+    "Custom slash commands and extensions",
+    "Session management and checkpointing",
+    "Sandboxed execution for safety",
+    "Multiple authentication methods (OAuth, API key, Vertex AI)",
+    "Headless mode for automation and scripting",
+    "GitHub Actions integration"
+  ],
+  "publicApiSurface": [
+    "gemini (main CLI command)",
+    "gemini --model/-m (model selection)",
+    "gemini --resume/-r (session resumption)",
+    "gemini --sandbox/-s (sandboxed execution)",
+    "gemini --prompt/-p (non-interactive mode)",
+    "gemini extensions (extension management)",
+    "gemini mcp (MCP server configuration)",
+    "gemini update (self-update)",
+    "/help (show help)",
+    "/chat (checkpoint management)",
+    "/settings (configuration editor)",
+    "/memory (GEMINI.md management)",
+    "/tools (list available tools)",
+    "/mcp (MCP server management)",
+    "/extensions (extension management)",
+    "/resume (session browser)",
+    "/restore (undo file changes)",
+    "@<path> (include file/directory content)",
+    "!<command> (execute shell command)"
+  ]
+}
